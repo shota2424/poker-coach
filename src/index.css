@@ -67,7 +67,7 @@ a {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1rem 2rem;
+  padding: 0.75rem 2rem;
   background: rgba(15, 23, 42, 0.8);
   backdrop-filter: blur(8px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
@@ -77,7 +77,7 @@ a {
 }
 
 .logo {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   font-weight: 800;
   background: linear-gradient(135deg, #60a5fa, #3b82f6);
   -webkit-background-clip: text;
@@ -95,9 +95,10 @@ a {
 
 .nav-link {
   color: var(--text-muted);
+  font-size: 0.95rem;
   font-weight: 500;
   transition: all 0.2s ease;
-  padding: 0.5rem 1rem;
+  padding: 0.4rem 0.8rem;
   border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
@@ -115,6 +116,86 @@ a {
   max-width: 1200px;
   margin: 0 auto;
   width: 100%;
+}
+
+/* Trainer layout */
+.trainer-container {
+  display: flex;
+  gap: 2rem;
+  position: relative;
+}
+
+.trainer-sidebar {
+  width: 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  height: fit-content;
+  padding: 1.5rem;
+  flex-shrink: 0;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.trainer-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  min-width: 0;
+}
+
+.sidebar-toggle, .sidebar-close-btn {
+  display: none;
+}
+
+.sidebar-overlay {
+  display: none;
+}
+
+/* Trainer header row */
+.trainer-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+/* Cards row: hand + board side by side on mobile */
+.cards-row {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+}
+
+.cards-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.cards-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+/* Result panel */
+.result-panel {
+  padding: 1rem 1.25rem;
+}
+
+.result-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.situation-panel {
+  padding: 1rem;
 }
 
 /* Glass panel */
@@ -290,7 +371,7 @@ a {
 /* Responsive UI */
 @media (max-width: 768px) {
   .header {
-    padding: 0.75rem 1.25rem;
+    padding: 0.5rem 1rem;
   }
   .nav-links {
     position: fixed;
@@ -316,7 +397,7 @@ a {
     padding-bottom: 70px;
   }
   .logo {
-    font-size: 1.3rem;
+    font-size: 1.1rem;
   }
   .main-content {
     padding: 1rem 0.5rem;
@@ -353,5 +434,97 @@ a {
   }
   .action-btn span:nth-child(2) {
     font-size: 0.7rem;
+  }
+  
+  /* Trainer Layout Mobile Fixes */
+  .trainer-container {
+    gap: 0;
+  }
+  
+  .trainer-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    z-index: 200;
+    transform: translateX(-100%);
+    border-radius: 0;
+    background: rgba(15, 23, 42, 0.98);
+    backdrop-filter: blur(20px);
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+    width: 280px;
+    padding-top: 1.5rem;
+    padding-bottom: 5rem; /* Space for bottom nav */
+    overflow-y: auto;
+  }
+  
+  .trainer-sidebar.open {
+    transform: translateX(0);
+  }
+  
+  .sidebar-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 150;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+  
+  .sidebar-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  
+  .sidebar-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 0.75rem;
+    padding: 0.5rem;
+    border-radius: var(--radius-sm);
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: var(--text-main);
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .sidebar-toggle:hover {
+    background: rgba(255,255,255,0.1);
+  }
+  
+  .sidebar-close-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: var(--radius-sm);
+  }
+
+  .sidebar-close-btn:hover {
+    color: var(--text-main);
+    background: rgba(255,255,255,0.1);
+  }
+
+  /* Cards row compact on mobile */
+  .cards-row {
+    gap: 0.5rem;
+  }
+
+  /* Result panel compact */
+  .result-panel {
+    padding: 0.75rem;
+    margin-top: 0.25rem;
+  }
+
+  .result-header {
+    gap: 0.5rem;
   }
 }
