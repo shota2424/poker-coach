@@ -7,12 +7,15 @@ export async function getAIExplanation(situation, showdownResult, history, evLos
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ situation, showdownResult, history, evLoss })
     });
-    if (!response.ok) throw new Error('API Request failed');
+    if (!response.ok) {
+      const errText = await response.text();
+      throw new Error(`HTTP ${response.status}: ${errText}`);
+    }
     const data = await response.json();
     return data.text || data.error;
   } catch (error) {
     console.error('API Com Error:', error);
-    return 'サーバー通信エラーが発生しました。ローカルの場合は npm run dev でバックエンドが起動しているか確認してください。';
+    return `通信エラーが発生しました。\n詳細: ${error.message}`;
   }
 };
 

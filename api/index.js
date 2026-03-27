@@ -17,7 +17,7 @@ const getGeminiClient = () => {
   return new GoogleGenerativeAI(apiKey);
 };
 
-app.post('/api/explanation', async (req, res) => {
+app.post(['/api/explanation', '/explanation'], async (req, res) => {
   const { situation, showdownResult, history, evLoss } = req.body;
   
   try {
@@ -55,7 +55,7 @@ ${evLoss} BB
   }
 });
 
-app.post('/api/spot', async (req, res) => {
+app.post(['/api/spot', '/spot'], async (req, res) => {
   const { situation, chosenAction, isCorrect } = req.body;
   
   try {
@@ -79,7 +79,7 @@ app.post('/api/spot', async (req, res) => {
   }
 });
 
-app.post('/api/chat', async (req, res) => {
+app.post(['/api/chat', '/chat'], async (req, res) => {
   const { chatLog, contextStr } = req.body;
   
   try {
@@ -107,6 +107,11 @@ app.post('/api/chat', async (req, res) => {
     console.error('LLM API Error:', e);
     res.status(500).json({ error: 'APIエラーが発生しました。時間を置いてお試しください。' }); 
   }
+});
+
+// Vercel Rewrite Debug Catch-all
+app.all('*', (req, res) => {
+  res.status(404).json({ error: `Route not found on Backend. Method: ${req.method}, URL: ${req.url}, Original: ${req.originalUrl}` });
 });
 
 export default app;
