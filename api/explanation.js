@@ -41,7 +41,7 @@ ${evLoss} BB
 
 回答は、生徒を励ましつつ、GTOの観点から「なぜ良かったのか」「なぜEVの減点があったのか」の理由を論理的に説明してください。簡潔なMarkdown形式で返してください。`;
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
     const result = await model.generateContent(prompt);
     const text = (await result.response).text();
     res.json({ text });
