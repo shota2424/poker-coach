@@ -207,21 +207,26 @@ const Play = () => {
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', animation: 'fadeIn 0.3s ease-out' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-        <h2>実戦プレイモード ({currentStage.street})</h2>
-        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-          <select value={difficulty} onChange={(e) => setDifficulty(e.target.value)} style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--text-main)', border: '1px solid rgba(255,255,255,0.1)', padding: '0.4rem 0.8rem', borderRadius: '2rem', cursor: 'pointer', fontWeight: 'bold' }}>
-            <option value="beginner">🟢 相手: ノーマル</option>
-            <option value="advanced">😈 相手: 本気 (GTO)</option>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', animation: 'fadeIn 0.3s ease-out' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+        <h2 style={{ margin: 0 }}>
+          実戦プレイ
+          <span style={{ marginLeft: '0.5rem', fontSize: '0.7rem', background: 'rgba(59,130,246,0.2)', border: '1px solid rgba(59,130,246,0.4)', color: 'var(--primary)', padding: '0.15rem 0.5rem', borderRadius: '2rem', verticalAlign: 'middle', fontWeight: 600 }}>
+            {currentStage.street}
+          </span>
+        </h2>
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          <select value={difficulty} onChange={(e) => setDifficulty(e.target.value)} style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--text-main)', border: '1px solid rgba(255,255,255,0.1)', padding: '0.3rem 0.6rem', borderRadius: '2rem', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.82rem' }}>
+            <option value="beginner">🟢 ノーマル</option>
+            <option value="advanced">😈 GTO</option>
           </select>
-          <div style={{ fontSize: '1.1rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.5rem', color: engine.totalEvLoss < -5 ? 'var(--danger)' : engine.totalEvLoss < -1 ? 'var(--warning)' : 'var(--accent)', background: 'rgba(255,255,255,0.05)', padding: '0.5rem 1rem', borderRadius: '2rem' }}>
-            📊 総EV損失: {engine.totalEvLoss.toFixed(2)} BB
+          <div style={{ fontSize: '0.88rem', fontWeight: 'bold', color: engine.totalEvLoss < -5 ? 'var(--danger)' : engine.totalEvLoss < -1 ? 'var(--warning)' : 'var(--accent)', background: 'rgba(255,255,255,0.05)', padding: '0.3rem 0.7rem', borderRadius: '2rem' }}>
+            EV: {engine.totalEvLoss.toFixed(2)}
           </div>
         </div>
       </div>
 
-      <div className="glass-panel" style={{ textAlign: 'center' }}>
+      <div className="glass-panel situation-panel">
         <div className="status-grid">
           <div className="status-box">
             <span className="status-label">👤 あなた</span>
@@ -241,24 +246,35 @@ const Play = () => {
           </div>
         </div>
 
-        <div style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.3)', padding: '1rem', borderRadius: '0.5rem', marginBottom: '1.5rem' }}>
-          <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '0.25rem' }}>現在のアクション状況</div>
-          <div style={{ fontSize: '1.2rem', color: 'var(--primary)', fontWeight: 'bold' }}>{currentStage.actionToHero}</div>
+        <div style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.3)', padding: '0.5rem 0.75rem', borderRadius: '0.5rem', marginBottom: '0.75rem' }}>
+          <div style={{ color: 'var(--text-muted)', fontSize: '0.72rem', marginBottom: '0.1rem' }}>アクション状況</div>
+          <div style={{ fontSize: 'clamp(0.85rem, 2.5vw, 1rem)', color: 'var(--primary)', fontWeight: 'bold', lineHeight: 1.4 }}>{currentStage.actionToHero}</div>
         </div>
-        
-        {currentStage.board.length > 0 && (
-           <div style={{ marginBottom: '2rem' }}>
-             <div style={{ color: 'var(--text-muted)', marginBottom: '0.5rem' }}>ボード</div>
-             <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', marginTop: '0.5rem' }}>
-            {currentStage.board.map((c, i) => <PlayingCard key={i} index={i} card={c} />)}
-          </div>
-           </div>
-        )}
 
-        <div style={{ marginBottom: '1rem', color: 'var(--text-muted)' }}>あなたのハンド</div>
-        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginBottom: '1rem' }}>
-          {currentStage.heroCards.map(c => <PlayingCard key={c} card={c} />)}
+        <div className="cards-row">
+          <div className="cards-group">
+            <div className="cards-label">あなたのハンド</div>
+            <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'center' }}>
+              {currentStage.heroCards.map((c, i) => <PlayingCard key={i} index={i} card={c} />)}
+            </div>
+          </div>
+          {currentStage.board.length > 0 && (
+            <div className="cards-group">
+              <div className="cards-label">ボード</div>
+              <div style={{ display: 'flex', gap: '0.35rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+                {currentStage.board.map((c, i) => <PlayingCard key={i} index={i} card={c} />)}
+              </div>
+            </div>
+          )}
         </div>
+
+        {equity && (
+          <div style={{ textAlign: 'center', marginTop: '0.5rem' }}>
+            <span style={{ fontSize: '0.82rem', color: 'var(--accent)', background: 'rgba(16,185,129,0.1)', padding: '0.2rem 0.65rem', borderRadius: '2rem' }}>
+              🧠 {equity === '計算中...' ? 'Equity計算中...' : `Equity: ${equity}%`}
+            </span>
+          </div>
+        )}
       </div>
 
       <div className="action-buttons">
@@ -290,22 +306,14 @@ const Play = () => {
         })}
       </div>
       
-      <div style={{ textAlign: 'center', marginTop: '2rem', minHeight: '60px' }}>
-        {equity && (
-           <h3 style={{ color: 'var(--accent)', marginBottom: '1rem', background: 'rgba(16,185,129,0.1)', display: 'inline-block', padding: '0.5rem 1rem', borderRadius: '2rem', animation: equity !== '計算中...' ? 'fadeIn 0.5s' : 'none' }}>
-             {equity === '計算中...' ? '🧠 厳密な勝率（Equity）を計算中...' : `🧠 精密勝率 (Equity vs ATC): ${equity}%`}
-           </h3>
-        )}
-        
-        {currentStage.street === 'Preflop' && (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <button className="btn btn-outline" onClick={() => setShowRange(!showRange)} style={{ marginBottom: '1rem' }}>
-               {showRange ? '🙈 レンジ表を隠す' : '👁️ レンジ表（カンニングペーパー）を開く'}
-            </button>
-            {showRange && <RangeChart situation={currentStage} />}
-          </div>
-        )}
-      </div>
+      {currentStage.street === 'Preflop' && (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
+          <button className="btn btn-outline" onClick={() => setShowRange(!showRange)} style={{ fontSize: '0.82rem', padding: '0.4rem 0.9rem' }}>
+            {showRange ? '🙈 レンジ表を隠す' : '👁️ レンジ表を開く'}
+          </button>
+          {showRange && <RangeChart situation={currentStage} />}
+        </div>
+      )}
     </div>
   );
 };
