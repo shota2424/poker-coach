@@ -149,22 +149,31 @@ export class PokerEngine {
 
     const scenarioDice = Math.random();
     
-    if (scenarioDice < 0.1 && firstPosition === 'SB' && secondPosition === 'BB') {
+    if (scenarioDice < 0.08 && firstPosition === 'SB' && secondPosition === 'BB') {
        this.heroPosition = 'BB';
        this.villainPosition = 'SB';
        this.preflopState = { facing: 'limp' };
        this.pot = 2.0;
-    } else if (scenarioDice < 0.45) {
+    } else if (scenarioDice < 0.35) {
+       // Hero opens (オープンレイズ) — hero acts first, villain responds
+       this.heroPosition = firstPosition;
+       this.villainPosition = secondPosition;
+       this.preflopState = { facing: 'open_by_hero' };
+       this.pot = 1.5;
+    } else if (scenarioDice < 0.55) {
+       // hero first to act (unopened)
        this.heroPosition = firstPosition;
        this.villainPosition = secondPosition;
        this.preflopState = { facing: 'unopened' };
        this.pot = 1.5;
-    } else if (scenarioDice < 0.8) {
+    } else if (scenarioDice < 0.80) {
+       // villainがopen済み、heroが後ろから対応
        this.villainPosition = firstPosition;
        this.heroPosition = secondPosition;
        this.preflopState = { facing: 'open' };
        this.pot = 4.0;
     } else {
+       // hero opened, villain 3bet
        this.heroPosition = firstPosition;
        this.villainPosition = secondPosition;
        this.preflopState = { facing: '3bet' };
@@ -285,6 +294,15 @@ export class PokerEngine {
         const raiseSize = this.heroPosition === 'SB' ? '3BB' : '2.5BB';
         options = ['Fold', 'Call', `Raise (${raiseSize})`, 'All-in'];
         optimalAction = recommended === 'Fold' ? 'Fold' : `Raise (${raiseSize})`;
+      } else if (facing === 'open_by_hero') {
+        // Hero acts first — decides whether to open raise
+        if (this.heroPosition === 'UTG') actionToHero = `UTG(あなた)からオープンします。何BBでレイズしますか？`;
+        else actionToHero = `${this.heroPosition}(あなた)からオープンレイズを検討しています。アクションを選んでください。`;
+        const raiseSize = this.heroPosition === 'SB' ? '3BB' : '2.5BB';
+        options = ['Fold', `Raise (${raiseSize})`, 'All-in'];
+        // GTO recommends raise if hand is strong enough
+        const rec2 = evaluatePreflopGTO(this.heroCards[0], this.heroCards[1], this.heroPosition, { facing: 'unopened' });
+        optimalAction = rec2 === 'Fold' ? 'Fold' : `Raise (${raiseSize})`;
       } else if (facing === 'limp') {
         actionToHero = 'SB(相手)が1BBのリンプインをしてきました。BB(あなた)の番です。';
         options = ['Check', 'Raise (3.5BB)', 'Raise (5BB)', 'All-in'];

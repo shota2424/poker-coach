@@ -105,81 +105,103 @@ const Play = () => {
 
   if (isFinished) {
     return (
-      <div className="glass-panel" style={{ textAlign: 'center', animation: 'fadeIn 0.5s ease-out' }}>
-        <Trophy size={64} color={engine.totalEvLoss >= -0.5 ? 'var(--accent)' : engine.totalEvLoss >= -2.0 ? 'var(--warning)' : 'var(--danger)'} style={{ marginBottom: '1rem' }} />
-        <h2 style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>ハンド終了！ 総EV損失: {engine.totalEvLoss.toFixed(2)} BB</h2>
-        
+      <div style={{ animation: 'fadeIn 0.3s ease-out', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+        {/* Sticky top bar: result + next button */}
+        <div className="glass-panel result-panel" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <Trophy size={28} color={engine.totalEvLoss >= -0.5 ? 'var(--accent)' : engine.totalEvLoss >= -2.0 ? 'var(--warning)' : 'var(--danger)'} />
+            <div>
+              <div style={{ fontWeight: 'bold', fontSize: '0.85rem', color: 'var(--text-muted)' }}>ハンド終了</div>
+              <div style={{ fontWeight: 'bold', fontSize: '1.1rem', color: engine.totalEvLoss >= -0.5 ? 'var(--accent)' : engine.totalEvLoss >= -2.0 ? 'var(--warning)' : 'var(--danger)' }}>
+                総EV損失: {engine.totalEvLoss.toFixed(2)} BB
+              </div>
+            </div>
+          </div>
+          <button className="btn btn-accent" onClick={startNewGame} disabled={isThinking} style={{ whiteSpace: 'nowrap', padding: '0.6rem 1.2rem' }}>
+            <RefreshCcw size={16} style={{ marginRight: '0.4rem' }} /> 次のハンドへ [Enter]
+          </button>
+        </div>
+
+        {/* Showdown result */}
         {showdownResult && (
-          <div style={{ background: 'rgba(0,0,0,0.3)', padding: '1.5rem', borderRadius: '1rem', border: '1px solid rgba(255,255,255,0.1)', margin: '1.5rem auto', maxWidth: '600px' }}>
-            <h3 className={showdownResult.resultText.includes('勝ち') ? 'winner-text' : ''} style={{ margin: 0, color: showdownResult.resultText.includes('勝ち') ? '#fbbf24' : 'var(--accent)', fontSize: '1.8rem', fontWeight: '800' }}>
-                結果: {showdownResult.resultText}
-              </h3>
-            
+          <div className="glass-panel" style={{ padding: '1rem', textAlign: 'center' }}>
+            <h3 className={showdownResult.resultText.includes('勝ち') ? 'winner-text' : ''} style={{ marginBottom: '0.75rem', color: showdownResult.resultText.includes('勝ち') ? '#fbbf24' : 'var(--accent)', fontSize: '1.3rem' }}>
+              {showdownResult.resultText}
+            </h3>
             {showdownResult.finalBoard && showdownResult.finalBoard.length > 0 && (
-              <div style={{ marginBottom: '1.5rem' }}>
-                <div style={{ color: 'var(--text-muted)', marginBottom: '0.5rem', fontSize: '0.9rem' }}>最終ボード</div>
-                <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', marginTop: '0.5rem' }}>
+              <div style={{ marginBottom: '0.75rem' }}>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.35rem' }}>最終ボード</div>
+                <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'center', flexWrap: 'wrap' }}>
                   {showdownResult.finalBoard.map((c, i) => <PlayingCard key={i} index={i} card={c} />)}
                 </div>
               </div>
             )}
-
-            <div style={{ display: 'flex', gap: '2rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-              <div style={{ flex: 1, minWidth: '150px' }}>
-                <div style={{ color: 'var(--text-muted)', marginBottom: '0.5rem', fontSize: '0.9rem' }}>あなたのハンド</div>
-                <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', marginBottom: '0.5rem' }}>
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+              <div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.3rem' }}>あなた</div>
+                <div style={{ display: 'flex', gap: '0.35rem', justifyContent: 'center', marginBottom: '0.25rem' }}>
                   {currentStage.heroCards.map((c, i) => <PlayingCard key={i} index={i} card={c} />)}
                 </div>
-                <div style={{ fontSize: '0.9rem', color: 'var(--primary)', fontWeight: 'bold' }}>{showdownResult.heroHandName}</div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 'bold' }}>{showdownResult.heroHandName}</div>
               </div>
-              <div style={{ flex: 1, minWidth: '150px' }}>
-                <div style={{ color: 'var(--text-muted)', marginBottom: '0.5rem', fontSize: '0.9rem' }}>相手のハンド</div>
-                <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', marginBottom: '0.5rem' }}>
+              <div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.3rem' }}>相手</div>
+                <div style={{ display: 'flex', gap: '0.35rem', justifyContent: 'center', marginBottom: '0.25rem' }}>
                   {showdownResult.villainCards.map((c, i) => <PlayingCard key={i} index={i} card={c} />)}
                 </div>
-                <div style={{ fontSize: '0.9rem', color: 'var(--danger)', fontWeight: 'bold' }}>{showdownResult.villainHandName}</div>
+                <div style={{ fontSize: '0.8rem', color: 'var(--danger)', fontWeight: 'bold' }}>{showdownResult.villainHandName}</div>
               </div>
             </div>
           </div>
         )}
 
-        <div style={{ margin: '2rem 0', display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'center' }}>
-          {engine.history.map((h, i) => (
-            <div key={i} style={{ display: 'flex', gap: '1rem', background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '0.5rem', width: '100%', maxWidth: '500px', justifyContent: 'space-between' }}>
-              <span style={{ fontWeight: 'bold', width: '80px', textAlign: 'left' }}>{h.street}</span>
-              <span style={{ flex: 1, textAlign: 'left' }}>選択: {h.action}</span>
-              <span style={{ color: h.evLoss === 0 ? 'var(--accent)' : h.evLoss >= -0.5 ? 'var(--warning)' : 'var(--danger)', fontWeight: 'bold' }}>
-                {h.evLoss === 0 ? '✅ Excellent (0.00)' : h.evLoss >= -0.5 ? `⚠️ Inaccuracy (${h.evLoss.toFixed(2)})` : `❌ Blunder (${h.evLoss.toFixed(2)})`}
-              </span>
-            </div>
-          ))}
-        </div>
-
-        <div style={{ padding: '1.5rem', background: 'rgba(59, 130, 246, 0.15)', borderRadius: 'var(--radius-md)', borderLeft: '4px solid var(--primary)', textAlign: 'left', lineHeight: '1.6', maxWidth: '600px', margin: '0 auto 2rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', color: 'var(--primary)', fontWeight: 'bold' }}>
-            <MessageSquare size={18} /> OpenAI 専属コーチからの総評
+        {/* Action history - compact */}
+        <div className="glass-panel" style={{ padding: '0.75rem 1rem' }}>
+          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.5rem', fontWeight: 'bold' }}>アクション履歴</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+            {engine.history.map((h, i) => (
+              <div key={i} style={{ display: 'flex', gap: '0.5rem', background: 'rgba(0,0,0,0.2)', padding: '0.5rem 0.75rem', borderRadius: '0.4rem', justifyContent: 'space-between', fontSize: '0.85rem', flexWrap: 'wrap' }}>
+                <span style={{ fontWeight: 'bold', color: 'var(--text-muted)', minWidth: '60px' }}>{h.street}</span>
+                <span style={{ flex: 1 }}>{h.action}</span>
+                <span style={{ fontWeight: 'bold', color: h.evLoss === 0 ? 'var(--accent)' : h.evLoss >= -0.5 ? 'var(--warning)' : 'var(--danger)' }}>
+                  {h.evLoss === 0 ? '✅ +0.00' : `${h.evLoss >= -0.5 ? '⚠️' : '❌'} ${h.evLoss.toFixed(2)}`}
+                </span>
+              </div>
+            ))}
           </div>
+        </div>
 
+        {/* AI Coach - scrollable text box */}
+        <div className="glass-panel" style={{ padding: '0.75rem 1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.9rem' }}>
+            <MessageSquare size={16} /> AIコーチの総評
+          </div>
           {!aiExplanation && !isThinking && (
-             <button onClick={handleRequestAI} className="btn btn-primary" style={{ width: '100%', marginTop: '0.5rem', fontWeight: 'bold' }}>
-               🤖 このハンドの詳しいプレイング評価をAIコーチに聞く
-             </button>
+            <button onClick={handleRequestAI} className="btn btn-primary" style={{ width: '100%', fontWeight: 'bold', fontSize: '0.9rem', padding: '0.6rem' }}>
+              🤖 AIコーチに詳しい解説を聞く
+            </button>
           )}
-
           {isThinking && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-main)', margin: '1rem 0' }}>
-              <Loader2 size={24} className="spin" color="var(--primary)" />
-              <span>コーチがあなたのプレイ履歴をAI分析し、解説を生成中です...</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0', fontSize: '0.9rem' }}>
+              <Loader2 size={20} className="spin" color="var(--primary)" />
+              <span>AI分析中...</span>
             </div>
           )}
-          
           {aiExplanation && (
-            <div style={{ marginTop: '1rem', whiteSpace: 'pre-wrap' }}>{aiExplanation}</div>
+            <div style={{
+              maxHeight: '220px',
+              overflowY: 'auto',
+              background: 'rgba(0,0,0,0.2)',
+              borderRadius: 'var(--radius-sm)',
+              padding: '0.75rem',
+              fontSize: '0.88rem',
+              lineHeight: 1.65,
+              whiteSpace: 'pre-wrap',
+            }}>
+              {aiExplanation}
+            </div>
           )}
         </div>
-        <button className="btn btn-primary" onClick={startNewGame} disabled={isThinking} style={{ marginTop: '1rem', width: '100%', padding: '1rem', fontSize: '1.2rem' }}>
-          <RefreshCcw size={18} style={{ marginRight: '0.5rem' }} /> 次のハンドへ進む [Enter]
-        </button>
       </div>
     );
   }
