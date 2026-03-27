@@ -28,7 +28,7 @@ GTO評価: EV損失が0であれば最適アクション。損失が大きいほ
 
 生徒のこの1つのアクションに対して、「なぜそのEVスコアになったか」「本来はどうするべきか」「どういう思考プロセスが重要か」を2〜3段落で解説してください。日本語で答えてください。`;
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
     const result = await model.generateContent(prompt);
     const text = (await result.response).text();
     res.json({ text });

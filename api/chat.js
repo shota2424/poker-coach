@@ -25,7 +25,7 @@ export default async function handler(req, res) {
     }));
 
     const userMessage = history.pop();
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
     const chat = model.startChat({
       history: [
         { role: 'user', parts: [{ text: systemPrompt + 'この設定で会話を始めます。' }] },
