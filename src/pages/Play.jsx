@@ -202,11 +202,11 @@ const Play = () => {
       <div className="glass-panel" style={{ textAlign: 'center' }}>
         <div className="status-grid">
           <div className="status-box">
-            <span className="status-label">🦸‍♂️ Hero</span>
+            <span className="status-label">👤 あなた</span>
             <span className="status-value">{currentStage.heroPosition}</span>
           </div>
           <div className="status-box">
-            <span className="status-label">🎯 Villain</span>
+            <span className="status-label">⚔️ 相手</span>
             <span className="status-value">{currentStage.villainPosition}</span>
           </div>
           <div className="status-box highlight">
