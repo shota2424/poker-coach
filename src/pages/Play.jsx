@@ -200,22 +200,22 @@ const Play = () => {
       </div>
 
       <div className="glass-panel" style={{ textAlign: 'center' }}>
-        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '1.5rem', justifyContent: 'center' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', background: 'rgba(0,0,0,0.3)', padding: '0.75rem 1rem', borderRadius: '0.5rem', flex: 1, minWidth: '100px', border: '1px solid rgba(255,255,255,0.05)' }}>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>🦸‍♂️ Hero</span>
-            <span style={{ fontSize: '1.3rem', fontWeight: 'bold', color: 'var(--text-main)' }}>{currentStage.heroPosition}</span>
+        <div className="status-grid">
+          <div className="status-box">
+            <span className="status-label">🦸‍♂️ Hero</span>
+            <span className="status-value">{currentStage.heroPosition}</span>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', background: 'rgba(0,0,0,0.3)', padding: '0.75rem 1rem', borderRadius: '0.5rem', flex: 1, minWidth: '100px', border: '1px solid rgba(255,255,255,0.05)' }}>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>🎯 Villain</span>
-            <span style={{ fontSize: '1.3rem', fontWeight: 'bold', color: 'var(--text-main)' }}>{currentStage.villainPosition}</span>
+          <div className="status-box">
+            <span className="status-label">🎯 Villain</span>
+            <span className="status-value">{currentStage.villainPosition}</span>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', background: 'rgba(16, 185, 129, 0.1)', padding: '0.75rem 1rem', borderRadius: '0.5rem', flex: 1, minWidth: '100px', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
-            <span style={{ fontSize: '0.8rem', color: 'var(--accent)', marginBottom: '0.25rem' }}>💰 Pot</span>
-            <span style={{ fontSize: '1.3rem', fontWeight: 'bold', color: 'var(--accent)' }}>{currentStage.pot}</span>
+          <div className="status-box highlight">
+            <span className="status-label">💰 Pot</span>
+            <span className="status-value">{currentStage.pot}</span>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', background: 'rgba(0,0,0,0.3)', padding: '0.75rem 1rem', borderRadius: '0.5rem', flex: 1, minWidth: '100px', border: '1px solid rgba(255,255,255,0.05)' }}>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>💵 Stack</span>
-            <span style={{ fontSize: '1.3rem', fontWeight: 'bold', color: 'var(--text-main)' }}>{currentStage.stack}</span>
+          <div className="status-box">
+            <span className="status-label">💵 Stack</span>
+            <span className="status-value">{currentStage.stack}</span>
           </div>
         </div>
 
@@ -239,7 +239,7 @@ const Play = () => {
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'center' }}>
+      <div className="action-buttons">
         {currentStage.options.map((action, i) => {
            let displayLabel = action;
            if (action.includes('33% Pot')) {
@@ -252,20 +252,17 @@ const Play = () => {
              displayLabel = `ALL-IN (${currentStage.stack})`;
            }
 
+           const parts = displayLabel.split(' (');
            return (
              <button 
                key={action}
                onClick={() => handleAction(action)}
-               className="btn btn-outline"
-               style={{ height: '70px', fontSize: '1.2rem', borderColor: 'rgba(255,255,255,0.2)', flex: '1 1 40%', minWidth: '120px', flexDirection: 'column', gap: '0.2rem', position: 'relative' }}
+               className="btn btn-outline action-btn"
                disabled={isThinking}
              >
-               {displayLabel.split(' (').map((part, idx) => (
-                 <span key={idx} style={{ fontSize: idx === 0 ? '1.2rem' : '0.9rem', color: idx === 0 ? 'inherit' : 'var(--text-muted)' }}>
-                   {idx === 1 ? '(' + part : part}
-                 </span>
-               ))}
-               <span style={{ position: 'absolute', top: 4, right: 8, fontSize: '0.7rem', opacity: 0.5 }}>[{i + 1}]</span>
+               <span>{parts[0]}</span>
+               {parts[1] && <span>({parts[1]}</span>}
+               <span className="shortcut-key">[{i + 1}]</span>
              </button>
            );
         })}
