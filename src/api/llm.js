@@ -1,11 +1,11 @@
 // フロントエンド側からはAPIキーを持たず、専用のバックエンド（Vercel Serverless Function）へリクエストを飛ばします。
 
-export async function getAIExplanation(situation, showdownResult, history, score) {
+export async function getAIExplanation(situation, showdownResult, history, evLoss) {
   try {
     const response = await fetch('/api/explanation', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ situation, showdownResult, history, score })
+      body: JSON.stringify({ situation, showdownResult, history, evLoss })
     });
     if (!response.ok) throw new Error('API Request failed');
     const data = await response.json();

@@ -96,7 +96,7 @@ const Play = () => {
 
   const handleRequestAI = async () => {
     setIsThinking(true);
-    const explanation = await getAIExplanation(currentStage, showdownResult, engine.history, engine.score);
+    const explanation = await getAIExplanation(currentStage, showdownResult, engine.history, engine.totalEvLoss);
     setAiExplanation(explanation);
     setIsThinking(false);
   };
@@ -257,7 +257,7 @@ const Play = () => {
                key={action}
                onClick={() => handleAction(action)}
                className="btn btn-outline"
-               style={{ height: '70px', fontSize: '1.2rem', borderColor: 'rgba(255,255,255,0.2)', minWidth: '160px', flexDirection: 'column', gap: '0.2rem', position: 'relative' }}
+               style={{ height: '70px', fontSize: '1.2rem', borderColor: 'rgba(255,255,255,0.2)', flex: '1 1 40%', minWidth: '120px', flexDirection: 'column', gap: '0.2rem', position: 'relative' }}
                disabled={isThinking}
              >
                {displayLabel.split(' (').map((part, idx) => (

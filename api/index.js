@@ -18,17 +18,17 @@ const getGeminiClient = () => {
 };
 
 app.post('/api/explanation', async (req, res) => {
-  const { situation, showdownResult, history, score } = req.body;
+  const { situation, showdownResult, history, evLoss } = req.body;
   
   try {
     const genAI = getGeminiClient();
     if (!genAI) {
-      return res.json({ text: `【※バックエンドにGemini APIキーが未設定です】モック解説: 最終スコアは${score}でした。ローカルで .env ファイルを作成し、GEMINI_API_KEY=AIza... を設定すると実際のGeminiが解説を生成します。` });
+      return res.json({ text: `【※バックエンドにGemini APIキーが未設定です】モック解説: 最終EV損失は${evLoss}BBでした。ローカルで .env ファイルを作成し、GEMINI_API_KEY=AIza... を設定すると実際のGeminiが解説を生成します。` });
     }
 
     if (!history || history.length === 0) return res.json({ text: "プレイ履歴がありません。" });
-    const historyText = history.map(h => `${h.street}: ${h.action} (正解判定: ${h.isOptimal ? '〇' : '✕'})`).join('\n');
-    const prompt = `あなたはポーカーのプロコーチです。以下の1ハンドの実際のプレイデータと最終スコアを見て、総評と詳細なアドバイスを行ってください。
+    const historyText = history.map(h => `${h.street}: ${h.action} (EV損失: ${h.evLoss} BB)`).join('\n');
+    const prompt = `あなたはポーカーのプロコーチです。以下の1ハンドの実際のプレイデータを見て、総評と詳細なアドバイスを行ってください。
 
 【手札と盤面の状況】
 生徒のポジション: ${situation.heroPosition}
@@ -40,10 +40,10 @@ app.post('/api/explanation', async (req, res) => {
 【生徒のアクション履歴】
 ${historyText}
 
-【GTOエンジンからの最終採点】
-${score} / 100点
+【ハンド終了時の総EV損失】
+${evLoss} BB
 
-回答は、生徒を励ましつつ、GTOの観点から「なぜ良かったのか」「なぜ減点されたのか」の理由を論理的に説明してください。簡潔なMarkdown形式で返してください。`;
+回答は、生徒を励ましつつ、GTOの観点から「なぜ良かったのか」「なぜEVの減点があったのか」の理由を論理的に説明してください。簡潔なMarkdown形式で返してください。`;
 
     const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
     const result = await model.generateContent(prompt);
