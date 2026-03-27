@@ -108,6 +108,22 @@ export class PokerEngine {
     // this.totalEvLoss = 0.00; // コメントアウトしてセッション全体で累積するように変更
     this.drillName = drillName;
 
+    // Villain range enforcer — used after position is decided
+    const dealVillainInRange = (villainPos, facingForVillain, maxAttempts = 30) => {
+      for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        const rec = evaluatePreflopGTO(this.villainCards[0], this.villainCards[1], villainPos, { facing: facingForVillain });
+        if (rec === 'Raise' || rec === 'Call') return; // acceptable hand
+        // Redeal villain cards: return current cards to deck and redraw
+        this.deck.unshift(...this.villainCards);
+        // Shuffle only the returned portion
+        for (let i = this.deck.length - 1; i >= this.deck.length - 2; i--) {
+          const j = Math.floor(Math.random() * this.deck.length);
+          [this.deck[i], this.deck[j]] = [this.deck[j], this.deck[i]];
+        }
+        this.villainCards = [this.deck.pop(), this.deck.pop()];
+      }
+    };
+
     if (drillName === 'flop_cb') {
       this.heroPosition = 'BU';
       this.villainPosition = 'BB';
@@ -154,32 +170,39 @@ export class PokerEngine {
        this.villainPosition = 'SB';
        this.preflopState = { facing: 'limp' };
        this.pot = 2.0;
+       // SBのリンプはコール相当 — 特にレンジ縛りなし（弱め可）
     } else if (scenarioDice < 0.35) {
-       // Hero opens (オープンレイズ) — hero acts first, villain responds
+       // Hero opens — villain responds
        this.heroPosition = firstPosition;
        this.villainPosition = secondPosition;
        this.preflopState = { facing: 'open_by_hero' };
        this.pot = 1.5;
+       // 相手はヒーローの後ろ側なので特にレンジ縛りなし
     } else if (scenarioDice < 0.55) {
-       // hero first to act (unopened)
+       // Unopened — hero decides whether to open
        this.heroPosition = firstPosition;
        this.villainPosition = secondPosition;
        this.preflopState = { facing: 'unopened' };
        this.pot = 1.5;
     } else if (scenarioDice < 0.80) {
-       // villainがopen済み、heroが後ろから対応
+       // Villain already opened — enforce villain opening range
        this.villainPosition = firstPosition;
        this.heroPosition = secondPosition;
        this.preflopState = { facing: 'open' };
        this.pot = 4.0;
+       // ✅ ヴィランをそのポジションのオープンレンジに縛る
+       dealVillainInRange(this.villainPosition, 'unopened');
     } else {
-       // hero opened, villain 3bet
+       // Hero opened, villain 3bet — enforce villain 3bet range
        this.heroPosition = firstPosition;
        this.villainPosition = secondPosition;
        this.preflopState = { facing: '3bet' };
        this.pot = 12.0;
+       // ✅ ヴィランを3betレンジ（高強度ハンドのみ）に縛る
+       dealVillainInRange(this.villainPosition, 'open');
     }
   }
+
 
   progressStreet() {
     if (this.street === 'Preflop') {
