@@ -193,10 +193,89 @@ export class PokerEngine {
       this.tableHands = {};
       this.heroPosition = 'BB'; this.villainPosition = 'BU';
       this.preflopState = { facing: 'open' };
-      this.preflopHistory = ['リバーブラフドリル'];
+      this.preflopHistory = ['リバーブラフキャッチドリル'];
       this.activePlayers = ['BB', 'BU'];
       this.pot = 45.0; this.street = 'River';
       this.heroStack = [100, 150][Math.floor(Math.random() * 2)];
+      this.board = [this.deck.pop(), this.deck.pop(), this.deck.pop(), this.deck.pop(), this.deck.pop()];
+      this.heroFolded = false; this.villainFolded = false; this.pendingVillainAction = null;
+      this.isMultiway = false;
+      return;
+    }
+
+    // ── ターンのブラフキャッチ ─────────────────────────────────────────────
+    if (drillName === 'turn_bluff_catch') {
+      this.heroCards = [this.deck.pop(), this.deck.pop()];
+      this.villainCards = [this.deck.pop(), this.deck.pop()];
+      this.tableHands = {};
+      this.heroPosition = 'BB'; this.villainPosition = 'BU';
+      this.preflopState = { facing: 'open' };
+      this.preflopHistory = ['ターン：ブラフキャッチドリル'];
+      this.activePlayers = ['BB', 'BU'];
+      const turnPot = [15, 20, 25, 30][Math.floor(Math.random() * 4)];
+      this.pot = turnPot;
+      this.street = 'Turn';
+      this.heroStack = [80, 100, 120][Math.floor(Math.random() * 3)];
+      this.board = [this.deck.pop(), this.deck.pop(), this.deck.pop(), this.deck.pop()];
+      this.heroFolded = false; this.villainFolded = false; this.pendingVillainAction = null;
+      this.isMultiway = false;
+      return;
+    }
+
+    // ── リバー：コール/フォールド/レイズ判断 ─────────────────────────────
+    if (drillName === 'river_decision') {
+      this.heroCards = [this.deck.pop(), this.deck.pop()];
+      this.villainCards = [this.deck.pop(), this.deck.pop()];
+      this.tableHands = {};
+      // Randomly hero is IP or OOP
+      const heroIsIP = Math.random() > 0.5;
+      this.heroPosition = heroIsIP ? 'BU' : 'BB';
+      this.villainPosition = heroIsIP ? 'BB' : 'BU';
+      this.preflopState = { facing: heroIsIP ? 'open_by_hero' : 'open' };
+      this.preflopHistory = ['リバー：コール/フォールド/レイズ判断ドリル'];
+      this.activePlayers = [this.heroPosition, this.villainPosition];
+      const rivPot = [18, 25, 35, 50][Math.floor(Math.random() * 4)];
+      this.pot = rivPot;
+      this.street = 'River';
+      this.heroStack = [60, 80, 100, 150][Math.floor(Math.random() * 4)];
+      this.board = [this.deck.pop(), this.deck.pop(), this.deck.pop(), this.deck.pop(), this.deck.pop()];
+      this.heroFolded = false; this.villainFolded = false; this.pendingVillainAction = null;
+      this.isMultiway = false;
+      return;
+    }
+
+    // ── ターン：ベットサイジング練習 ─────────────────────────────────────
+    if (drillName === 'turn_bet_sizing') {
+      this.heroCards = [this.deck.pop(), this.deck.pop()];
+      this.villainCards = [this.deck.pop(), this.deck.pop()];
+      this.tableHands = {};
+      this.heroPosition = 'BU'; this.villainPosition = 'BB';
+      this.preflopState = { facing: 'open_by_hero' };
+      this.preflopHistory = ['ターン：ベットサイジングドリル（IP）'];
+      this.activePlayers = ['BU', 'BB'];
+      const tPot = [12, 16, 20, 28][Math.floor(Math.random() * 4)];
+      this.pot = tPot;
+      this.street = 'Turn';
+      this.heroStack = [80, 100, 130][Math.floor(Math.random() * 3)];
+      this.board = [this.deck.pop(), this.deck.pop(), this.deck.pop(), this.deck.pop()];
+      this.heroFolded = false; this.villainFolded = false; this.pendingVillainAction = null;
+      this.isMultiway = false;
+      return;
+    }
+
+    // ── リバー：バリューベット vs チェック ────────────────────────────────
+    if (drillName === 'river_value') {
+      this.heroCards = [this.deck.pop(), this.deck.pop()];
+      this.villainCards = [this.deck.pop(), this.deck.pop()];
+      this.tableHands = {};
+      this.heroPosition = 'BU'; this.villainPosition = 'BB';
+      this.preflopState = { facing: 'open_by_hero' };
+      this.preflopHistory = ['リバー：バリューベット判断ドリル（IP）'];
+      this.activePlayers = ['BU', 'BB'];
+      const rvPot = [20, 28, 35, 45][Math.floor(Math.random() * 4)];
+      this.pot = rvPot;
+      this.street = 'River';
+      this.heroStack = [60, 80, 100][Math.floor(Math.random() * 3)];
       this.board = [this.deck.pop(), this.deck.pop(), this.deck.pop(), this.deck.pop(), this.deck.pop()];
       this.heroFolded = false; this.villainFolded = false; this.pendingVillainAction = null;
       this.isMultiway = false;
@@ -408,11 +487,55 @@ export class PokerEngine {
         actionToHero = 'BB(相手)がチェック。IPのあなたのC-Bet判断です。';
         options = ['Check', 'Bet 33% Pot', 'Bet 75% Pot', 'All-in'];
         optimalAction = evaluatePostflopGTO(this.heroCards, this.board, false, true, { facing: 'check' });
+
       } else if (this.drillName === 'river_bluff' && this.street === 'River') {
-        actionToHero = `BU(相手)がリバーでタフなベット(${(this.pot * 0.75).toFixed(1)}BB)。ブラフキャッチしますか？`;
+        const betAmt = (this.pot * 0.75).toFixed(1);
+        actionToHero = `BU(相手)がリバーで${betAmt}BBのポラライズドベット。ブラフキャッチしますか？`;
         options = ['Fold', 'Call', 'Raise (All-in)'];
         const res = evaluatePostflopGTO(this.heroCards, this.board, true, false, { facing: 'bet' });
         optimalAction = res === 'Raise' ? 'Raise (All-in)' : res;
+
+      } else if (this.drillName === 'turn_bluff_catch' && this.street === 'Turn') {
+        const betSizes = [
+          { label: '33%', mult: 0.33 },
+          { label: '50%', mult: 0.50 },
+          { label: '75%', mult: 0.75 },
+        ];
+        const bet = betSizes[Math.floor(Math.random() * betSizes.length)];
+        const betAmt = (this.pot * bet.mult).toFixed(1);
+        actionToHero = `BU(相手)がターンで${betAmt}BB（ポットの${bet.label}）のベット。コール/レイズ/フォールドのどれが正解？`;
+        options = ['Fold', 'Call', 'Raise', 'All-in'];
+        const res2 = evaluatePostflopGTO(this.heroCards, this.board, true, false, { facing: 'bet' });
+        optimalAction = res2 === 'Raise' ? 'Raise' : res2;
+
+      } else if (this.drillName === 'river_decision' && this.street === 'River') {
+        const villainDecide = evaluatePostflopGTO(this.villainCards, this.board, heroIsOOP, !heroIsOOP, { facing: 'check' });
+        if (villainDecide !== 'Check' || heroIsOOP) {
+          // Villain bets
+          const betPct = ['33%', '50%', '75%'][Math.floor(Math.random() * 3)];
+          const mult = betPct === '33%' ? 0.33 : betPct === '50%' ? 0.5 : 0.75;
+          const betAmt = (this.pot * mult).toFixed(1);
+          actionToHero = `${this.villainPosition}(相手)がリバーで${betAmt}BB（${betPct}ポット）のベット。コール？フォールド？レイズ？`;
+          options = ['Fold', 'Call', 'Raise (All-in)'];
+          const r3 = evaluatePostflopGTO(this.heroCards, this.board, !heroIsOOP, heroIsOOP, { facing: 'bet' });
+          optimalAction = r3 === 'Raise' ? 'Raise (All-in)' : r3;
+        } else {
+          // Hero acts first (checked to)
+          actionToHero = `${this.villainPosition}(OOP)がチェック。IP(あなた)のリバーアクションは？`;
+          options = ['Check', 'Bet 33% Pot', 'Bet 75% Pot', 'All-in'];
+          optimalAction = evaluatePostflopGTO(this.heroCards, this.board, heroIsOOP, !heroIsOOP, { facing: 'check' });
+        }
+
+      } else if (this.drillName === 'turn_bet_sizing' && this.street === 'Turn') {
+        actionToHero = `BB(相手)がターンでチェック。IP(あなた)のベットサイズを選んでください。`;
+        options = ['Check', 'Bet 33% Pot', 'Bet 50% Pot', 'Bet 75% Pot', 'All-in'];
+        optimalAction = evaluatePostflopGTO(this.heroCards, this.board, false, true, { facing: 'check' });
+
+      } else if (this.drillName === 'river_value' && this.street === 'River') {
+        actionToHero = `BB(相手)がリバーでチェック。バリューベットするべき？サイズは？`;
+        options = ['Check', 'Bet 33% Pot', 'Bet 75% Pot', 'All-in'];
+        optimalAction = evaluatePostflopGTO(this.heroCards, this.board, false, true, { facing: 'check' });
+
       } else {
         // Normal postflop — villain acts based on their hand
         const villainGTO = evaluatePostflopGTO(

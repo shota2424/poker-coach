@@ -6,9 +6,13 @@ import RangeChart from '../components/RangeChart';
 import PlayingCard from '../components/PlayingCard';
 
 const DRILL_CATEGORIES = [
-  { id: 'preflop', name: '基本プリフロップ', active: true },
-  { id: 'flop_cb', name: 'フロップCB (IP)', active: false },
-  { id: 'river_bluff', name: 'リバーのブラフキャッチ', active: false },
+  { id: 'preflop',          name: '🃏 基本プリフロップ',             group: 'プリフロップ',   active: true },
+  { id: 'flop_cb',          name: '🔵 フロップCBet (IP)',           group: 'フロップ',       active: false },
+  { id: 'turn_bet_sizing',  name: '🟡 ターン：ベットサイジング',     group: 'ターン',         active: false },
+  { id: 'turn_bluff_catch', name: '🟡 ターン：ブラフキャッチ',       group: 'ターン',         active: false },
+  { id: 'river_bluff',      name: '🔴 リバー：ブラフキャッチ',       group: 'リバー',         active: false },
+  { id: 'river_decision',   name: '🔴 リバー：コール/フォールド/レイズ', group: 'リバー',    active: false },
+  { id: 'river_value',      name: '🔴 リバー：バリューベット判断',   group: 'リバー',         active: false },
 ];
 
 const Trainer = () => {
