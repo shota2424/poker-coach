@@ -86,7 +86,7 @@ function simulatePreflopBeforeHero(tableHands, heroIdx) {
   for (let i = 0; i < heroIdx; i++) {
     const pos = ALL_POSITIONS[i];
     const hand = tableHands[pos];
-    const rec = evaluatePreflopGTO(hand[0], hand[1], pos, { facing });
+    const rec = evaluatePreflopGTO(hand[0], hand[1], pos, { facing, openerPosition: openRaiser });
 
     if (facing === 'unopened') {
       if (rec === 'Raise') {
@@ -98,12 +98,14 @@ function simulatePreflopBeforeHero(tableHands, heroIdx) {
         preflopActionLog.push(`${pos}: フォールド`);
       }
     } else if (facing === 'open') {
-      if (rec === 'Raise') {
+      const rec2 = evaluatePreflopGTO(hand[0], hand[1], pos, { facing: 'open', openerPosition: openRaiser });
+      if (rec2 === 'Raise') {
+        const prevOpener = openRaiser;
         openRaiser = pos;
         facing = '3bet';
         pot += 9;
         preflopActionLog.push(`${pos}: 3ベット(9BB)`);
-      } else if (rec === 'Call') {
+      } else if (rec2 === 'Call') {
         callersBefore.push(pos);
         pot += 2.5;
         preflopActionLog.push(`${pos}: コール`);
@@ -111,13 +113,12 @@ function simulatePreflopBeforeHero(tableHands, heroIdx) {
         preflopActionLog.push(`${pos}: フォールド`);
       }
     } else if (facing === '3bet') {
-      // After a 3bet, players mostly fold or call with very strong hands
-      const rec2 = evaluatePreflopGTO(hand[0], hand[1], pos, { facing: '3bet' });
-      if (rec2 === 'Raise') {
+      const rec3 = evaluatePreflopGTO(hand[0], hand[1], pos, { facing: '3bet' });
+      if (rec3 === 'Raise') {
         facing = '4bet';
         pot += 22;
         preflopActionLog.push(`${pos}: 4ベット(22BB)`);
-      } else if (rec2 === 'Call') {
+      } else if (rec3 === 'Call') {
         callersBefore.push(pos);
         pot += 9;
         preflopActionLog.push(`${pos}: コール`);
@@ -664,6 +665,7 @@ export class PokerEngine {
     if (action.includes('Raise') || action.includes('Bet')) {
       isAggressive = true;
       if (action.includes('33%')) { heroAdded = this.pot * 0.33; this.pot += this.pot * 0.66; }
+      else if (action.includes('50%')) { heroAdded = this.pot * 0.50; this.pot += this.pot * 1.0; }
       else if (action.includes('75%')) { heroAdded = this.pot * 0.75; this.pot += this.pot * 1.5; }
       else if (action.includes('2.5BB')) { heroAdded = 2.5; this.pot += 3; }
       else if (action.includes('3BB') || action.includes('3.5BB') || action.includes('4BB')) {
