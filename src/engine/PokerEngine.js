@@ -1,5 +1,5 @@
 import { Hand } from 'pokersolver';
-import { evaluatePreflopGTO, GTO_RANGES, getHandString } from './PreflopDatabase';
+import { evaluatePreflopGTO, getHandString } from './PreflopDatabase';
 import { evaluatePostflopGTO } from './PostflopHeuristic';
 
 const SUITS = ['s', 'h', 'd', 'c'];
