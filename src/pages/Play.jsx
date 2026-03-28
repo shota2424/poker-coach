@@ -106,20 +106,17 @@ const Play = () => {
   if (isFinished) {
     return (
       <div style={{ animation: 'fadeIn 0.3s ease-out', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-        {/* Sticky top bar: result + next button */}
-        <div className="glass-panel result-panel" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <Trophy size={28} color={engine.totalEvLoss >= -0.5 ? 'var(--accent)' : engine.totalEvLoss >= -2.0 ? 'var(--warning)' : 'var(--danger)'} />
-            <div>
-              <div style={{ fontWeight: 'bold', fontSize: '0.85rem', color: 'var(--text-muted)' }}>ハンド終了</div>
-              <div style={{ fontWeight: 'bold', fontSize: '1.1rem', color: engine.totalEvLoss >= -0.5 ? 'var(--accent)' : engine.totalEvLoss >= -2.0 ? 'var(--warning)' : 'var(--danger)' }}>
+        {/* Top bar: result summary */}
+        <div className="glass-panel result-panel" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', flexWrap: 'wrap', padding: '1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <Trophy size={32} color={engine.totalEvLoss >= -0.5 ? 'var(--accent)' : engine.totalEvLoss >= -2.0 ? 'var(--warning)' : 'var(--danger)'} />
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontWeight: 'bold', fontSize: '0.9rem', color: 'var(--text-muted)' }}>ハンド終了</div>
+              <div style={{ fontWeight: 'bold', fontSize: '1.2rem', color: engine.totalEvLoss >= -0.5 ? 'var(--accent)' : engine.totalEvLoss >= -2.0 ? 'var(--warning)' : 'var(--danger)' }}>
                 総EV損失: {engine.totalEvLoss.toFixed(2)} BB
               </div>
             </div>
           </div>
-          <button className="btn btn-accent" onClick={startNewGame} disabled={isThinking} style={{ whiteSpace: 'nowrap', padding: '0.6rem 1.2rem' }}>
-            <RefreshCcw size={16} style={{ marginRight: '0.4rem' }} /> 次のハンドへ [Enter]
-          </button>
         </div>
 
         {/* Showdown result */}
@@ -154,6 +151,27 @@ const Play = () => {
             </div>
           </div>
         )}
+
+        {/* Next Hand Button */}
+        <button 
+          className="btn btn-accent" 
+          onClick={startNewGame} 
+          disabled={isThinking} 
+          style={{ 
+            width: '100%', 
+            padding: '1rem', 
+            fontSize: '1.1rem', 
+            fontWeight: 'bold', 
+            display: 'flex', 
+            justifyContent: 'center', 
+            alignItems: 'center', 
+            boxShadow: '0 4px 12px rgba(16,185,129,0.3)',
+            marginTop: '0.5rem',
+            marginBottom: '0.5rem'
+          }}
+        >
+          <RefreshCcw size={20} style={{ marginRight: '0.5rem' }} /> 次のハンドへ [Enter]
+        </button>
 
         {/* Action history - compact */}
         <div className="glass-panel" style={{ padding: '0.75rem 1rem' }}>
