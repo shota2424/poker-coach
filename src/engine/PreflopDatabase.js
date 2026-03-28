@@ -34,10 +34,12 @@ function resolveAction(actionCode, scenarioData, hand) {
 export function evaluatePreflopGTO(card1, card2, position, situationObj) {
   const handStr = getHandString(card1, card2);
   const scenarios = gtoData.scenarios;
+  // Map 'BU' to 'BTN' for JSON lookup
+  const pos = position === 'BU' ? 'BTN' : position;
   
   // 1. Unopened (RFI)
   if (situationObj.facing === 'unopened') {
-    const scenario = scenarios.open_raise[position];
+    const scenario = scenarios.open_raise[pos];
     if (!scenario) return 'Fold';
     const action = scenario[handStr];
     return resolveAction(action, scenario, handStr);
@@ -45,10 +47,11 @@ export function evaluatePreflopGTO(card1, card2, position, situationObj) {
 
   // 2. Facing Open (3-betting or Calling)
   if (situationObj.facing === 'open') {
-    const opener = situationObj.openerPosition || 'UTG';
+    let opener = situationObj.openerPosition || 'UTG';
+    if (opener === 'BU') opener = 'BTN';
     let scenario;
     
-    if (position === 'BB') {
+    if (pos === 'BB') {
       scenario = scenarios.BB_vs_open["vs_" + opener];
     } else {
       scenario = scenarios.three_bet["vs_" + opener];
@@ -70,7 +73,12 @@ export function evaluatePreflopGTO(card1, card2, position, situationObj) {
 
   // 4. Facing 3-bet (4-betting or Calling)
   if (situationObj.facing === '3bet') {
-    const scenario = scenarios.vs_3bet[position + "_vs_3bet"];
+    let scenario;
+    if (pos === 'BTN') {
+      scenario = scenarios.vs_3bet["BTN_vs_3bet"];
+    } else {
+      scenario = scenarios.vs_3bet[pos + "_vs_3bet"];
+    }
     if (!scenario) return 'Fold';
     const action = scenario[handStr];
     // In vs_3bet, R=4bet, C=Call, F=Fold
