@@ -620,7 +620,6 @@ export class PokerEngine {
 
   generateEvLoss(options, optimalAction) {
     const ev = {};
-    const sit = this.getSituation();
 
     options.forEach(opt => {
       if (opt === optimalAction) {
