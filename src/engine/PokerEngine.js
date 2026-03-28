@@ -172,6 +172,8 @@ export class PokerEngine {
   resetGame(drillName = null, difficulty = 'advanced') {
     this.difficulty = difficulty;
     this.drillName = drillName;
+    this.history = [];
+    this.totalEvLoss = 0.00;
     this._shuffle();
 
     // ── Drill shortcuts ────────────────────────────────────────────────────
@@ -455,7 +457,7 @@ export class PokerEngine {
     // ─── Pending villain re-raise ───────────────────────────────────────────
     if (this.pendingVillainAction === 'Raise') {
       actionToHero = `${this.villainPosition}が さらにリレイズしてきました！`;
-      options = ['Fold', 'Call', 'Raise (All-in)'];
+      options = ['Fold', 'Call', 'Raise', 'All-in'];
       const rec = this.street === 'Preflop'
         ? evaluatePreflopGTO(this.heroCards[0], this.heroCards[1], this.heroPosition, { facing: '3bet' })
         : evaluatePostflopGTO(this.heroCards, this.board, false, false, { facing: 'allin' });
@@ -486,7 +488,7 @@ export class PokerEngine {
         } else {
           actionToHero = `${historyPrefix}あなた(${this.heroPosition})の番です。オープンを検討してください。`;
           const rSize = this.heroPosition === 'SB' ? '3BB' : '2.5BB';
-          options = ['Fold', `Raise (${rSize})`, 'All-in'];
+          options = ['Fold', 'Call', `Raise (${rSize})`, 'All-in'];
           optimalAction = this.getPreflopOptimalAction(this.heroPosition, 'unopened');
         }
       } else if (facing === 'open') {
@@ -502,7 +504,7 @@ export class PokerEngine {
         optimalAction = this.getPreflopOptimalAction(this.heroPosition, '3bet');
       } else if (facing === '4bet') {
         actionToHero = `${historyPrefix}4ベット(22BB)されました！あなた(${this.heroPosition})の番です。`;
-        options = ['Fold', 'Call', 'All-in'];
+        options = ['Fold', 'Call', 'Raise', 'All-in'];
         optimalAction = this.getPreflopOptimalAction(this.heroPosition, '4bet');
       } else if (facing === 'limp') {
         actionToHero = `${historyPrefix}SBがリンプイン。あなた(BB)の番です。`;
@@ -512,7 +514,7 @@ export class PokerEngine {
         // open_by_hero or other
         actionToHero = `${historyPrefix}あなた(${this.heroPosition})の番です。オープンしますか？`;
         const rSize = this.heroPosition === 'SB' ? '3BB' : '2.5BB';
-        options = ['Fold', `Raise (${rSize})`, 'All-in'];
+        options = ['Fold', 'Call', `Raise (${rSize})`, 'All-in'];
         optimalAction = this.getPreflopOptimalAction(this.heroPosition, 'unopened');
       }
 
@@ -535,7 +537,7 @@ export class PokerEngine {
       } else if (this.drillName === 'river_bluff' && this.street === 'River') {
         const betAmt = (this.pot * 0.75).toFixed(1);
         actionToHero = `BU(相手)がリバーで${betAmt}BBのポラライズドベット。ブラフキャッチしますか？`;
-        options = ['Fold', 'Call', 'Raise (All-in)'];
+        options = ['Fold', 'Call', 'Raise', 'All-in'];
         optimalAction = evaluatePostflopGTO(this.heroCards, this.board, true, false, { facing: 'bet', amount: 0.75 }, this.isMultiway);
 
       } else if (this.drillName === 'turn_bluff_catch' && this.street === 'Turn') {
@@ -552,7 +554,7 @@ export class PokerEngine {
           const betAmt = (this.pot * mult).toFixed(1);
           const betLabel = mult > 1 ? 'オーバーベット' : `${(mult*100).toFixed(0)}%ポット`;
           actionToHero = `${this.villainPosition}(相手)がリバーで${betAmt}BB（${betLabel}）のベット。`;
-          options = ['Fold', 'Call', 'Raise (All-in)'];
+          options = ['Fold', 'Call', 'Raise', 'All-in'];
           optimalAction = evaluatePostflopGTO(this.heroCards, this.board, !heroIsOOP, heroIsOOP, { facing: 'bet', amount: mult }, this.isMultiway);
         } else {
           actionToHero = `${this.villainPosition}(OOP)がチェック。IP(あなた)のリバーアクションは？`;
@@ -588,7 +590,7 @@ export class PokerEngine {
           } else {
             const amount = villainGTO.includes('33%') ? 0.33 : (villainGTO.includes('75%') ? 0.75 : 1.0);
             actionToHero = `${this.villainPosition}が${villainGTO}。${multiwayTag}`;
-            options = ['Fold', 'Call', 'Raise (All-in)'];
+            options = ['Fold', 'Call', 'Raise', 'All-in'];
             optimalAction = evaluatePostflopGTO(this.heroCards, this.board, false, heroIsPFR, { facing: 'bet', amount }, this.isMultiway);
           }
         }
