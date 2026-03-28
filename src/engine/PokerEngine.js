@@ -299,6 +299,7 @@ export class PokerEngine {
     // Pick hero position randomly (all 6 are equally common)
     const heroIdx = Math.floor(Math.random() * 6);
     this.heroPosition = ALL_POSITIONS[heroIdx];
+    const heroPos = this.heroPosition;
 
     // Deal hero cards first, then fill the table
     this.heroCards = [this.deck.pop(), this.deck.pop()];
