@@ -306,7 +306,7 @@ export class PokerEngine {
     const tableHands = dealTableHands(this.deck, this.heroPosition, this.heroCards);
 
     // Simulate action before hero
-    const { facing, openRaiser, callersBefore, preflopActionLog, pot: prePot } = simulatePreflopBeforeHero(tableHands, heroPos, heroIdx);
+    const { facing, openRaiser, callersBefore, preflopActionLog, pot: prePot } = simulatePreflopBeforeHero(tableHands, heroIdx);
     this.tableHands = tableHands;
     this.preflopState = { facing, openerPosition: openRaiser };
     this.preflopHistory = preflopActionLog;
