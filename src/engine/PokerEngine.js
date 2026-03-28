@@ -392,7 +392,7 @@ export class PokerEngine {
       return rec === 'Raise' ? (pos === 'SB' ? 'Raise (3BB)' : 'Raise (2.5BB)') : 'Fold';
     }
     if (facing === 'open') {
-      const rec = evaluatePreflopGTO(this.heroCards[0], this.heroCards[1], pos, { facing: 'open' });
+      const rec = evaluatePreflopGTO(this.heroCards[0], this.heroCards[1], pos, { facing: 'open', openerPosition: this.openRaiser });
       if (rec === 'Raise') return pos === 'BB' || pos === 'SB' ? 'Raise (3Bet: 9BB)' : 'Raise (3Bet: 7.5BB)';
       return rec; // 'Call' or 'Fold'
     }
