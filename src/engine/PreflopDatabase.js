@@ -52,13 +52,14 @@ export function evaluatePreflopGTO(card1, card2, position, situationObj) {
     let scenario;
     
     if (pos === 'BB') {
-      scenario = scenarios.BB_vs_open["vs_" + opener];
-      if (!scenario) scenario = scenarios.BB_vs_open["vs_BTN"];
-      if (!scenario) scenario = scenarios.BB_vs_open["vs_UTG"];
+      const bbScenarios = scenarios.three_bet?.BB_vs_open || {};
+      scenario = bbScenarios["vs_" + opener];
+      if (!scenario) scenario = bbScenarios["vs_BTN"];
+      if (!scenario) scenario = bbScenarios["vs_UTG"];
     } else {
-      scenario = scenarios.three_bet["vs_" + opener];
-      if (!scenario) scenario = scenarios.three_bet["vs_BTN"];
-      if (!scenario) scenario = scenarios.three_bet["vs_UTG"];
+      scenario = scenarios.three_bet?.["vs_" + opener];
+      if (!scenario) scenario = scenarios.three_bet?.["vs_BTN"];
+      if (!scenario) scenario = scenarios.three_bet?.["vs_UTG"];
     }
     
     if (!scenario) return 'Fold';
