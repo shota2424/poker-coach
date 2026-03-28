@@ -41,6 +41,8 @@ body {
     radial-gradient(circle at 85% 30%, rgba(16, 185, 129, 0.05), transparent 25%);
   background-attachment: fixed;
   min-height: 100vh;
+  min-height: 100dvh;
+  min-height: 100svh;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -61,6 +63,8 @@ a {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  min-height: 100dvh;
+  min-height: 100svh;
 }
 
 .header {
@@ -484,6 +488,8 @@ a {
     top: 0;
     left: 0;
     height: 100vh;
+    height: 100dvh;
+    height: 100svh;
     z-index: 200;
     transform: translateX(-100%);
     border-radius: 0;
