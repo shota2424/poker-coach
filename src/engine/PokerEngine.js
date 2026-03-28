@@ -148,7 +148,8 @@ export class PokerEngine {
     this.street = 'Preflop';
     this.history = [];
     this.preflopState = { facing: 'unopened' };
-    this.preflopHistory = []; // text log of action before hero
+    this.preflopHistory = []; // preflop action log
+    this.matchHistory = [];   // full hand history (preflop, flop, turn)
     this.openRaiser = null;
     this.isMultiway = false;
     this.drillName = null;
@@ -186,6 +187,7 @@ export class PokerEngine {
       this.board = [this.deck.pop(), this.deck.pop(), this.deck.pop()];
       this.heroFolded = false; this.villainFolded = false; this.pendingVillainAction = null;
       this.isMultiway = false;
+      this._genHistory(drillName);
       return;
     }
     if (drillName === 'river_bluff') {
@@ -201,6 +203,7 @@ export class PokerEngine {
       this.board = [this.deck.pop(), this.deck.pop(), this.deck.pop(), this.deck.pop(), this.deck.pop()];
       this.heroFolded = false; this.villainFolded = false; this.pendingVillainAction = null;
       this.isMultiway = false;
+      this._genHistory(drillName);
       return;
     }
 
@@ -220,6 +223,7 @@ export class PokerEngine {
       this.board = [this.deck.pop(), this.deck.pop(), this.deck.pop(), this.deck.pop()];
       this.heroFolded = false; this.villainFolded = false; this.pendingVillainAction = null;
       this.isMultiway = false;
+      this._genHistory(drillName);
       return;
     }
 
@@ -242,6 +246,7 @@ export class PokerEngine {
       this.board = [this.deck.pop(), this.deck.pop(), this.deck.pop(), this.deck.pop(), this.deck.pop()];
       this.heroFolded = false; this.villainFolded = false; this.pendingVillainAction = null;
       this.isMultiway = false;
+      this._genHistory(drillName);
       return;
     }
 
@@ -297,16 +302,19 @@ export class PokerEngine {
 
     // Deal hero cards first, then fill the table
     this.heroCards = [this.deck.pop(), this.deck.pop()];
-    this.tableHands = dealTableHands(this.deck, this.heroPosition, this.heroCards);
+    const tableHands = dealTableHands(this.deck, this.heroPosition, this.heroCards);
 
     // Simulate action before hero
-    const { facing, openRaiser, callersBefore, preflopActionLog, pot } =
-      simulatePreflopBeforeHero(this.tableHands, heroIdx);
-
-    this.preflopState = { facing };
-    this.openRaiser = openRaiser;
+    const { facing, openRaiser, callersBefore, preflopActionLog, pot: prePot } = simulatePreflopBeforeHero(tableHands, heroPos, heroIdx);
+    this.tableHands = tableHands;
+    this.preflopState = { facing, openerPosition: openRaiser };
     this.preflopHistory = preflopActionLog;
-    this.pot = pot;
+    this.matchHistory = [...preflopActionLog.map(l => `Preflop: ${l}`)];
+    this.pot = prePot;
+    this.activePlayers = [heroPos];
+    if (openRaiser) this.activePlayers.push(openRaiser);
+    callersBefore.forEach(p => this.activePlayers.push(p));
+    this.isMultiway = this.activePlayers.length > 2;
 
     // Pick main villain: the open raiser, or nearest player behind hero, or BB
     if (openRaiser) {
@@ -402,6 +410,40 @@ export class PokerEngine {
       return rec === 'Raise' ? 'Raise (3.5BB)' : 'Check';
     }
     return 'Fold';
+  }
+
+  _genHistory(drillName) {
+    this.matchHistory = [];
+    const hero = this.heroPosition;
+    const vill = this.villainPosition;
+    const isHeroIP = (hero === 'BU' || hero === 'CO' || (hero === 'BB' && vill === 'SB'));
+
+    // 1. Preflop
+    if (drillName === 'flop_cb' || drillName === 'turn_bet_sizing' || drillName === 'river_value') {
+       this.matchHistory.push(`Preflop: あなた(${hero})が 2.5BB オープン。${vill}がコール。`);
+    } else {
+       this.matchHistory.push(`Preflop: ${vill}が 2.5BB オープン。あなた(${hero})がコール。`);
+    }
+
+    // 2. Flop
+    if (this.street === 'Turn' || this.street === 'River') {
+      const b3 = this.board.slice(0, 3).map(c => c[0]+c[1]).join(' ');
+      if (drillName === 'turn_bluff_catch' || drillName === 'river_bluff' || drillName === 'river_decision') {
+        this.matchHistory.push(`Flop [${b3}]: あなたがチェック、${vill}が 33%ポットをベット、あなたはコール。`);
+      } else {
+        this.matchHistory.push(`Flop [${b3}]: ${vill}がチェック、あなたが 33%ポットをベット、${vill}がコール。`);
+      }
+    }
+
+    // 3. Turn
+    if (this.street === 'River') {
+      const t = this.board[3][0] + this.board[3][1];
+      if (drillName === 'river_bluff') {
+        this.matchHistory.push(`Turn [${t}]: あなたも相手もチェック。`);
+      } else if (drillName === 'river_decision') {
+        this.matchHistory.push(`Turn [${t}]: 激しいアクションはなく、互いにチェック。`);
+      }
+    }
   }
 
   getSituation() {
@@ -571,6 +613,7 @@ export class PokerEngine {
       options,
       optimalAction,
       evLoss: this.generateEvLoss(options, optimalAction),
+      matchHistory: this.matchHistory,
     };
   }
 

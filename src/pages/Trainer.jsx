@@ -203,6 +203,20 @@ const Trainer = () => {
               <span className="status-value">{situation.stack}</span>
             </div>
           </div>
+ 
+          {/* Hand History Log context */}
+          {situation.matchHistory && situation.matchHistory.length > 0 && (
+            <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.1)', padding: '0.6rem 0.9rem', borderRadius: '0.5rem', marginBottom: '0.75rem', fontSize: '0.8rem' }}>
+              <div style={{ color: 'var(--text-muted)', fontSize: '0.7rem', marginBottom: '0.3rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Hand History</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                {situation.matchHistory.map((line, idx) => (
+                  <div key={idx} style={{ color: 'var(--text-main)', borderLeft: '2px solid var(--primary)', paddingLeft: '0.5rem', lineHeight: '1.2' }}>
+                    {line}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Action situation */}
           <div style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.3)', padding: '0.6rem 0.9rem', borderRadius: '0.5rem', marginBottom: '0.75rem' }}>
