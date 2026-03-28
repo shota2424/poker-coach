@@ -53,8 +53,12 @@ export function evaluatePreflopGTO(card1, card2, position, situationObj) {
     
     if (pos === 'BB') {
       scenario = scenarios.BB_vs_open["vs_" + opener];
+      if (!scenario) scenario = scenarios.BB_vs_open["vs_BTN"];
+      if (!scenario) scenario = scenarios.BB_vs_open["vs_UTG"];
     } else {
       scenario = scenarios.three_bet["vs_" + opener];
+      if (!scenario) scenario = scenarios.three_bet["vs_BTN"];
+      if (!scenario) scenario = scenarios.three_bet["vs_UTG"];
     }
     
     if (!scenario) return 'Fold';
