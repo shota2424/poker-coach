@@ -67,7 +67,7 @@ a {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.75rem 2rem;
+  padding: calc(0.75rem + env(safe-area-inset-top)) 2rem 0.75rem 2rem;
   background: rgba(15, 23, 42, 0.8);
   backdrop-filter: blur(8px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
@@ -401,7 +401,7 @@ a {
 /* Responsive UI */
 @media (max-width: 768px) {
   .header {
-    padding: 0.4rem 0.75rem;
+    padding: calc(0.4rem + env(safe-area-inset-top)) 0.75rem 0.4rem 0.75rem;
   }
   .nav-links {
     position: fixed;
@@ -411,7 +411,7 @@ a {
     background: rgba(15, 23, 42, 0.95);
     backdrop-filter: blur(10px);
     border-top: 1px solid rgba(255, 255, 255, 0.1);
-    padding: 0.35rem 0.5rem 1.2rem 0.5rem;
+    padding: 0.35rem 0.5rem calc(1.2rem + env(safe-area-inset-bottom)) 0.5rem;
     justify-content: space-around;
     gap: 0;
     z-index: 100;
@@ -424,7 +424,7 @@ a {
     border-radius: 0;
   }
   .app-container {
-    padding-bottom: 62px;
+    padding-bottom: calc(62px + env(safe-area-inset-bottom));
   }
   .logo {
     font-size: 0.95rem;
