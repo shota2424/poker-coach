@@ -14,10 +14,8 @@ export function analyzeBoardTexture(board) {
   const maxSuitCount = Math.max(...Object.values(suitCounts));
   
   const isMonotone = maxSuitCount >= 3;
-  const isTwoTone = maxSuitCount === 2;
-  const isRainbow = maxSuitCount === 1;
-  
-  const isPaired = bVals[0] === bVals[1] || bVals[1] === bVals[2] || (board.length>3 && bVals[2] === bVals[3]);
+  const isTwoTone   = maxSuitCount === 2;
+  const isPaired    = bVals[0] === bVals[1] || bVals[1] === bVals[2] || (board.length>3 && bVals[2] === bVals[3]);
   
   let gaps = 0;
   for (let i=0; i<Math.min(3, bVals.length)-1; i++) {
@@ -27,177 +25,148 @@ export function analyzeBoardTexture(board) {
   const isDry = !isPaired && !isMonotone && !isConnected;
   
   const hasA = bVals[0] === 14;
-  const hasHighCards = bVals[0] >= 12; // Q or higher on board
+  const hasHighCards = bVals[0] >= 12;
 
-  return { isDry, isWet: !isDry, isPaired, isMonotone, isTwoTone, isRainbow, isConnected, hasA, hasHighCards };
+  return { isDry, isWet: !isDry, isPaired, isMonotone, isTwoTone, isConnected, hasA, hasHighCards };
 }
 
-export function evaluatePostflopGTO(heroCards, board, heroIsOOP, isPreflopRaiser, facingActionObj) {
+/**
+ * @param {Object} facingActionObj { facing: 'check'|'bet'|'allin', amount: number (bet size as % of pot) }
+ */
+export function evaluatePostflopGTO(heroCards, board, heroIsOOP, isPreflopRaiser, facingActionObj, isMultiway = false) {
   const texture = analyzeBoardTexture(board);
-  const street = board.length <= 3 ? 'flop' : board.length === 4 ? 'turn' : 'river';
-  
+  const street = board.length <= 3 ? 'flop' : (board.length === 4 ? 'turn' : 'river');
+  const betSize = facingActionObj.amount || 0; // 0.33, 0.75, 1.0 etc.
+
   const heroRanks = heroCards.map(c => RANK_VALUES[c[0]]).sort((a,b) => b-a);
   const heroSuits = heroCards.map(c => c[1]);
   const bVals = board.map(c => RANK_VALUES[c[0]]).sort((a,b) => b-a);
   const bSuits = board.map(c => c[1]);
 
-  // Hand rankings relative to board
+  // Hand identification
   const isPocketPair = heroRanks[0] === heroRanks[1];
-  const hasOverPair = isPocketPair && heroRanks[0] > (bVals[0] || 0);
-  const hasTopPair = !isPocketPair && (heroRanks[0] === bVals[0] || heroRanks[1] === bVals[0]);
+  const hasOverPair  = isPocketPair && heroRanks[0] > (bVals[0] || 0);
+  const hasTopPair   = !isPocketPair && (heroRanks[0] === bVals[0] || heroRanks[1] === bVals[0]);
   const hasMiddlePair = !isPocketPair && bVals.length > 1 && (heroRanks[0] === bVals[1] || heroRanks[1] === bVals[1]);
   const hasBottomPair = !isPocketPair && bVals.length > 2 && (heroRanks[0] === bVals[2] || heroRanks[1] === bVals[2]);
-  const hasTPTK = hasTopPair && heroRanks[0] >= 14; // top pair top kicker
+  const hasTPTK     = hasTopPair && heroRanks[0] >= 14;
 
-  // Draw detection
+  // Draws
   const suitCounts = {};
   [...heroSuits, ...bSuits].forEach(s => suitCounts[s] = (suitCounts[s] || 0) + 1);
   const maxSuitCount = Math.max(...Object.values(suitCounts));
   const isFlushDraw = maxSuitCount === 4;
-  const isFlush = maxSuitCount >= 5;
+  const isFlush     = maxSuitCount >= 5;
 
-  // Straight draw
   const allVals = Array.from(new Set([...heroRanks, ...bVals])).sort((a,b) => a-b);
-  let isStraightDraw = false;
-  let isOESD = false; // open-ended straight draw
+  let isOESD = false; 
   let isGutshot = false;
   for (let i = 0; i <= allVals.length - 4; i++) {
     const span = allVals[i+3] - allVals[i];
-    if (span === 3) isOESD = true;  // 4 consecutive = OESD
-    if (span === 4) isGutshot = true; // 4 cards in 5 range = gutshot
+    if (span === 3) isOESD = true;
+    if (span === 4) isGutshot = true;
   }
-  isStraightDraw = isOESD || isGutshot;
+  const isStraightDraw = isOESD || isGutshot;
 
   const hand = Hand.solve([...heroCards, ...board]);
   const strRanks = ['High Card', 'Pair', 'Two Pair', 'Three of a Kind', 'Straight', 'Flush', 'Full House', 'Four of a Kind', 'Straight Flush', 'Royal Flush'];
   const absoluteStrength = strRanks.indexOf(hand.name);
   
-  const isNuts = absoluteStrength >= 4; // straight+
-  const isMonster = absoluteStrength >= 2 || hasOverPair; // two pair or overpair
+  const isNuts    = absoluteStrength >= 4; // straight+
+  const isMonster = absoluteStrength >= 2 || hasOverPair; 
   const hasGoodDraw = isFlushDraw || isOESD;
-  const hasMarginalDraw = isGutshot && !isOESD;
-  const isAir = !hasTopPair && !hasMiddlePair && !hasBottomPair && !isPocketPair && !hasGoodDraw && !isMonster;
+  const isAir     = !hasTopPair && !hasMiddlePair && !hasBottomPair && !isPocketPair && !hasGoodDraw && !isMonster;
 
-  // ─── ストリート別の判断差 ────────────────────────────────────────────
-  // リバーではドローが実質無効（もう引けない）
-  const drawIsLive = street !== 'river';
-  const effectiveGoodDraw = hasGoodDraw && drawIsLive;
-  const effectiveMarginalDraw = hasMarginalDraw && drawIsLive;
+  // Multiway adjustment: Be much tighter
+  const strengthTier = (isMonster ? 3 : (hasTopPair || hasGoodDraw ? 2 : (hasMiddlePair ? 1 : 0))) - (isMultiway ? 1 : 0);
 
-  // ─── FACING CHECK (betting decision) ──────────────────────────────────
+  // ─── 1. FACING CHECK / ACTING FIRST ───────────────────────────────────
 
   if (facingActionObj.facing === 'check') {
      if (isPreflopRaiser) {
-       // C-Betting / Barrel Logic
-       if (heroIsOOP) {
-         // OOP PFR
-         if (street === 'flop') {
-           if (isNuts) return 'Bet 75% Pot';
-           if (isMonster || isFlushDraw) return texture.isPaired ? 'Bet 33% Pot' : 'Bet 75% Pot';
-           if (hasTopPair) return 'Bet 75% Pot';
-           if (effectiveGoodDraw) return 'Bet 33% Pot'; // semi-bluff
-           return 'Check';
-         } else if (street === 'turn') {
-           // Turn barrel: polarize more
-           if (isNuts || isMonster) return 'Bet 75% Pot';
-           if (hasTPTK) return 'Bet 50% Pot';
-           if (hasTopPair) return 'Bet 33% Pot'; // thin value / pot control
-           if (effectiveGoodDraw) return 'Bet 50% Pot'; // semi-bluff
-           return 'Check';
-         } else {
-           // River: value or bluff, no middle ground
-           if (isNuts || isMonster) return 'Bet 75% Pot';
-           if (hasTPTK) return 'Bet 50% Pot';
-           if (isAir && Math.random() < 0.35) return 'Bet 75% Pot'; // bluff frequency
-           return 'Check'; // showdown value
-         }
-       } else {
-         // IP PFR
-         if (street === 'flop') {
-           if (texture.isDry || texture.hasA) {
-             // Dry/A-high: range bet small
-             if (isNuts || isMonster) return 'Bet 75% Pot'; // don't small-bet the nuts
-             return 'Bet 33% Pot';
-           } else {
-             if (isMonster || hasTopPair) return 'Bet 75% Pot';
-             if (effectiveGoodDraw) return 'Bet 75% Pot'; // semi-bluff on wet board
-             return 'Check';
+        // C-Bet / Barrel Logic
+        if (heroIsOOP) {
+           // OOP PFR: Polarized strategy
+           if (street === 'flop') {
+              if (isMonster || isFlushDraw) return texture.isPaired ? 'Bet 33% Pot' : 'Bet 75% Pot';
+              if (hasTopPair && heroRanks[0] >= 12) return 'Bet 75% Pot';
+              return 'Check';
+           } else { // Turn/River OOP
+              if (isNuts || isMonster) return 'Bet 75% Pot';
+              if (isAir && Math.random() < 0.3) return 'Bet 75% Pot'; // Bluff
+              return 'Check';
            }
-         } else if (street === 'turn') {
-           if (isNuts || isMonster) return 'Bet 75% Pot';
-           if (hasTopPair) return 'Bet 50% Pot';
-           if (effectiveGoodDraw) return 'Bet 50% Pot';
-           if (hasMiddlePair || isPocketPair) return 'Check'; // pot control
-           return 'Check';
-         } else {
-           // River IP: thin value or bluff
-           if (isNuts || isMonster) return 'Bet 75% Pot';
-           if (hasTPTK || hasOverPair) return 'Bet 50% Pot';
-           if (hasTopPair) return 'Bet 33% Pot'; // thin value
-           if (isAir && Math.random() < 0.30) return 'Bet 75% Pot'; // bluff
-           return 'Check';
-         }
-       }
+        } else {
+           // IP PFR: Small frequent bets vs big polar bets
+           if (street === 'flop') {
+              if (texture.isDry || texture.hasA) return 'Bet 33% Pot'; // Range bet
+              if (isMonster || hasGoodDraw) return 'Bet 75% Pot';
+              return 'Check';
+           } else if (street === 'turn') {
+              if (isMonster || isOESD || isFlushDraw) return 'Bet 75% Pot';
+              if (hasTopPair) return 'Bet 50% Pot';
+              return 'Check';
+           } else { // River
+              if (isNuts || isMonster) return (Math.random() < 0.2 ? 'Bet 150% Pot' : 'Bet 75% Pot'); // Overbet
+              if (hasTPTK) return 'Bet 50% Pot';
+              if (isAir && Math.random() < 0.25) return 'Bet 75% Pot'; // Bluff
+              return 'Check';
+           }
+        }
      } else {
-       // Caller (defender) — probe / float bets
-       if (street === 'flop') {
-         if (isMonster || hasTopPair) return 'Bet 75% Pot';
-         if (effectiveGoodDraw) return 'Bet 33% Pot';
-         if (isAir && !heroIsOOP) return 'Bet 33% Pot'; // IP stab
-         return 'Check';
-       } else if (street === 'turn') {
-         if (isNuts || isMonster) return 'Bet 75% Pot';
-         if (hasTopPair) return 'Bet 50% Pot';
-         if (effectiveGoodDraw) return 'Bet 33% Pot';
-         return 'Check';
-       } else {
-         // River
-         if (isNuts || isMonster) return 'Bet 75% Pot';
-         if (hasTopPair && heroRanks[0] >= 12) return 'Bet 50% Pot'; // thin value
-         if (isAir && Math.random() < 0.25) return 'Bet 75% Pot'; // bluff
-         return 'Check';
-       }
+        // Caller (Defender) strategy
+        if (isMonster) return heroIsOOP ? 'Check' : 'Bet 75% Pot'; // OOP x/r, IP value
+        if (hasGoodDraw && !heroIsOOP) return 'Bet 33% Pot'; // IP stab
+        return 'Check';
      }
+  }
 
-  // ─── FACING BET (call / raise / fold decision) ──────────────────────────
+  // ─── 2. FACING BET (The MDF / Pot Odds Core) ──────────────────────────
 
-  } else if (facingActionObj.facing === 'bet') {
-     if (street === 'flop') {
-       if (isNuts || (isMonster && !texture.isMonotone)) return 'Raise';
-       if (isFlushDraw && heroIsOOP) return 'Call'; // x/r consideration
-       if (hasTopPair || hasOverPair) return 'Call';
-       if (effectiveGoodDraw || hasMiddlePair) return 'Call';
-       if (isPocketPair && heroRanks[0] > (bVals[1] || 0)) return 'Call';
-       return 'Fold';
-     } else if (street === 'turn') {
-       // ターン: ドローのオッズが悪くなる、ペアの価値も下がる
-       if (isNuts || isMonster) return 'Raise';
-       if (hasOverPair || hasTPTK) return 'Call';
-       if (hasTopPair) return 'Call'; // still usually a call
-       if (effectiveGoodDraw) return 'Call'; // drawing to river
-       if (hasMiddlePair && heroRanks[0] >= 10) return 'Call'; // marginal call
-       if (effectiveMarginalDraw) return 'Fold'; // gutshot not worth it on turn
-       return 'Fold';
+  if (facingActionObj.facing === 'bet') {
+     // Minimum Defense Frequency (Approx)
+     // 33% bet -> MDF 75% (Catch middle pair+)
+     // 75% bet -> MDF 57% (Catch top pair+)
+     // 150% bet -> MDF 40% (Catch high top pair+)
+
+     if (street === 'river') {
+        // No more draws. Value vs Bluffs only.
+        if (isNuts || isFlush) return 'Raise';
+        if (isMonster) return 'Call'; // Two pair+ always call river
+        
+        if (betSize <= 0.4) { // Small bet
+          return (hasMiddlePair || hasTopPair || hasOverPair) ? 'Call' : 'Fold';
+        } else if (betSize <= 0.8) { // Medium bet
+          return (hasTopPair || hasOverPair) ? 'Call' : 'Fold';
+        } else { // Overbet / Large
+          return (hasTPTK || hasOverPair) ? 'Call' : 'Fold';
+        }
      } else {
-       // リバー: ドロー完成したかショーダウンバリューで判断
-       if (isNuts || isFlush || absoluteStrength >= 4) return 'Raise';
-       if (isMonster) return 'Call'; // two pair+ is a call
-       if (hasOverPair) return 'Call'; // overpair bluff catch
-       if (hasTPTK) return 'Call'; // TPTK bluff catch
-       if (hasTopPair && heroRanks[0] >= 12) return 'Call'; // decent top pair bluff catch
-       if (hasTopPair && heroRanks[0] < 12) return 'Fold'; // weak kicker top pair
-       if (hasMiddlePair) return 'Fold'; // middle pair folds on river
-       return 'Fold';
+        // Turn / Flop: Consider draws and future streets
+        if (isNuts) return 'Raise';
+        if (isMonster) {
+          // Check-raise semi-frequently OOP
+          if (heroIsOOP && Math.random() < 0.4) return 'Raise';
+          return 'Call';
+        }
+        
+        if (hasGoodDraw) return 'Call';
+        if (hasTopPair) return 'Call';
+
+        if (betSize <= 0.4) {
+           return (hasMiddlePair || isGutshot) ? 'Call' : 'Fold';
+        }
+        return 'Fold';
      }
+  }
 
-  // ─── FACING ALL-IN ────────────────────────────────────────────────────
+  // ─── 3. FACING ALL-IN ──────────────────────────────────────────────────
 
-  } else if (facingActionObj.facing === 'allin') {
-     if (absoluteStrength >= 4 || isFlush) return 'Call'; // straight+
-     if (isMonster && !texture.isMonotone && !texture.isConnected) return 'Call'; // 2pair+ on safe board
-     if (hasOverPair && absoluteStrength <= 1 && texture.isDry) return 'Call'; // overpair on dry board
+  if (facingActionObj.facing === 'allin') {
+     if (absoluteStrength >= 4 || isFlush) return 'Call'; 
+     if (isMonster && texture.isDry) return 'Call';
      return 'Fold';
   }
-  
+
   return 'Check';
 }

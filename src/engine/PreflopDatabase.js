@@ -36,32 +36,39 @@ export const GTO_RANGES = {
     HJ:  parseRangeString("22+, A9s+, K9s+, Q9s+, J9s+, T9s, 98s, 87s, 76s, 65s, 54s, ATo+, KJo+, QJo"),
     CO:  parseRangeString("22+, A2s+, K5s+, Q8s+, J8s+, T8s, 97s, 87s, 76s, 65s, 54s, A8o+, KTo+, QTo+, JTo"),
     BU:  parseRangeString("22+, A2s+, K2s+, Q2s+, J5s+, T6s+, 96s+, 85s+, 75s+, 64s+, 54s, A2o+, K8o+, Q9o+, J9o+, T9o"),
-    SB:  parseRangeString("22+, A2s+, K2s+, Q5s+, J7s+, T7s+, 97s+, 86s+, 76s, 65s, 54s, A5o+, K8o+, Q9o+, J9o+, T9o"),
+    SB:  parseRangeString("22+, A2s+, K2s+, Q2s+, J5s+, T6s+, 96s+, 85s+, 75s+, 64s+, 54s, 43s, A2o+, K5o+, Q8o+, J8o+, T8o+, 98o"), // Very wide SB open
   },
 
-  // ── 3bet レンジ（ポジション別） ──────────────────────────────────────
   facingOpen: {
-    // vs早期ポジション（UTG/HJ）のオープン: タイトに3bet
-    threeBet_tight: parseRangeString("QQ+, AKs, AKo"),
-    call_tight:     parseRangeString("JJ, TT, 99, AQs, AJs, KQs, QJs, JTs, T9s, 98s"),
+    // vs UTG/HJ
+    threeBet_tight: parseRangeString("QQ+, AKs, AKo, A5s, A4s"),
+    call_tight:     parseRangeString("JJ-22, AQs-AJs, KQs, QJs, JTs, T9s, 98s, 87s, 76s, AQo"),
 
-    // vs中間ポジション（CO）のオープン: やや広く3bet  
-    threeBet_mid:   parseRangeString("JJ+, AQs+, AKo, A5s, A4s"),
-    call_mid:       parseRangeString("22+, ATs+, KTs+, QTs+, JTs, T9s, 98s, 87s, 76s, AQo"),
+    // vs CO
+    threeBet_mid:   parseRangeString("JJ+, AQs+, AKo, A5s-A2s, KJs, QJs, T9s"),
+    call_mid:       parseRangeString("TT-22, AJs, ATs, KTs, QTs, JTs, 98s, 87s, 76s, AQo-AJo, KQo"),
 
-    // vsレイトポジション（BU/SB）のオープン: 広く3bet
-    threeBet_wide:  parseRangeString("TT+, AJs+, AKo, AQo, KQs, A5s, A4s, A3s"),
-    call_wide:      parseRangeString("22+, A2s+, K9s+, Q9s+, J9s+, T9s, 98s, 87s, 76s, 65s, A9o+, KTo+, QJo"),
+    // vs BU
+    threeBet_wide:  parseRangeString("99+, AJs+, AKo, AQo, KQs, A5s-A2s, K5s, Q9s, J9s, T8s, 97s, 86s"),
+    call_wide:      parseRangeString("88-22, ATs-A2s, KTs-K2s, QTs-Q5s, JTs-J7s, T9s-T7s, 98s-97s, 87s, 76s, 65s, 54s, ATo-A7o, KTo+, QTo+, JTo"),
+
+    // BB vs SB (The widest battle)
+    threeBet_bb_vs_sb: parseRangeString("77+, A2s+, K5s+, Q8s+, J8s+, T8s+, 98s, 87s, 76s, A7o+, KTo+, QTo+, JTo"),
+    call_bb_vs_sb:     parseRangeString("66-22, K2s-K4s, Q2s-Q7s, J2s-J7s, T2s-T7s, 92s-97s, 82s-86s, 72s-75s, 62s-65s, 52s-54s, 43s, A2o-A6o, K2o-K9o, Q2o-Q9o, J8o-J9o, T8o-T9o, 98o"),
   },
 
   facing3Bet: {
-    fourBet: parseRangeString("QQ+, AKs, AKo"),
-    call:    parseRangeString("TT+, AQs, KQs, JTs, T9s, 98s"),
+    // Standard 4bet/Call/Fold
+    fourBet: parseRangeString("QQ+, AKs, AKo, A5s-A2s"),
+    call:    parseRangeString("JJ-99, AQs, AJs, KQs, QJs, JTs"),
+    
+    // SB 4bet (Polarized)
+    fourBet_sb: parseRangeString("JJ+, AKs, AKo, A5s-A2s, K5s, Q5s"),
   },
 
   facingLimp: {
-    raise: parseRangeString("55+, A2s+, K8s+, Q9s+, J9s+, T9s, A8o+, KTo+, QTo+, JTo"),
-  },
+    raise: parseRangeString("44+, A2s+, K8s+, Q9s+, J9s+, T9s, 98s, 87s, A8o+, KTo+, QTo+, JTo"),
+  }
 };
 
 export function getHandString(card1, card2) {
@@ -77,17 +84,20 @@ export function getHandString(card1, card2) {
 }
 
 /**
- * openerPosition: ポジション of the opener (needed to adjust 3bet range)
+ * openerPosition: Position of the opener
  */
 export function evaluatePreflopGTO(card1, card2, position, situationObj) {
   const handStr = getHandString(card1, card2);
   
+  // 1. Facing Open
   if (situationObj.facing === 'open') {
-     // 3bet range depends on who opened
      const opener = situationObj.openerPosition || 'CO';
      let threeBetRange, callRange;
 
-     if (opener === 'UTG' || opener === 'HJ') {
+     if (position === 'BB' && opener === 'SB') {
+       threeBetRange = GTO_RANGES.facingOpen.threeBet_bb_vs_sb;
+       callRange = GTO_RANGES.facingOpen.call_bb_vs_sb;
+     } else if (opener === 'UTG' || opener === 'HJ') {
        threeBetRange = GTO_RANGES.facingOpen.threeBet_tight;
        callRange = GTO_RANGES.facingOpen.call_tight;
      } else if (opener === 'CO') {
@@ -101,13 +111,26 @@ export function evaluatePreflopGTO(card1, card2, position, situationObj) {
      if (threeBetRange.has(handStr)) return 'Raise';
      if (callRange.has(handStr)) return 'Call';
      return 'Fold';
+
+  // 2. Facing 3-bet
   } else if (situationObj.facing === '3bet') {
-     if (GTO_RANGES.facing3Bet.fourBet.has(handStr)) return 'Raise';
-     if (GTO_RANGES.facing3Bet.call.has(handStr)) return 'Call';
+     let fourBetRange = GTO_RANGES.facing3Bet.fourBet;
+     let callRange = GTO_RANGES.facing3Bet.call;
+     
+     if (position === 'SB') {
+       fourBetRange = GTO_RANGES.facing3Bet.fourBet_sb;
+     }
+
+     if (fourBetRange.has(handStr)) return 'Raise';
+     if (callRange.has(handStr)) return 'Call';
      return 'Fold';
+
+  // 3. Facing Limp
   } else if (situationObj.facing === 'limp') {
      if (GTO_RANGES.facingLimp.raise.has(handStr)) return 'Raise';
      return 'Check';
+
+  // 4. Unopened (Deciding to open)
   } else {
      const range = GTO_RANGES.open[position];
      if (range && range.has(handStr)) return 'Raise';

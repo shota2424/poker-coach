@@ -487,100 +487,66 @@ export class PokerEngine {
       if (this.drillName === 'flop_cb' && this.street === 'Flop') {
         actionToHero = 'BB(相手)がチェック。IPのあなたのC-Bet判断です。';
         options = ['Check', 'Bet 33% Pot', 'Bet 75% Pot', 'All-in'];
-        optimalAction = evaluatePostflopGTO(this.heroCards, this.board, false, true, { facing: 'check' });
+        optimalAction = evaluatePostflopGTO(this.heroCards, this.board, false, true, { facing: 'check' }, this.isMultiway);
 
       } else if (this.drillName === 'river_bluff' && this.street === 'River') {
         const betAmt = (this.pot * 0.75).toFixed(1);
         actionToHero = `BU(相手)がリバーで${betAmt}BBのポラライズドベット。ブラフキャッチしますか？`;
         options = ['Fold', 'Call', 'Raise (All-in)'];
-        const res = evaluatePostflopGTO(this.heroCards, this.board, true, false, { facing: 'bet' });
-        optimalAction = res === 'Raise' ? 'Raise (All-in)' : res;
+        optimalAction = evaluatePostflopGTO(this.heroCards, this.board, true, false, { facing: 'bet', amount: 0.75 }, this.isMultiway);
 
       } else if (this.drillName === 'turn_bluff_catch' && this.street === 'Turn') {
-        const betSizes = [
-          { label: '33%', mult: 0.33 },
-          { label: '50%', mult: 0.50 },
-          { label: '75%', mult: 0.75 },
-        ];
-        const bet = betSizes[Math.floor(Math.random() * betSizes.length)];
-        const betAmt = (this.pot * bet.mult).toFixed(1);
-        actionToHero = `BU(相手)がターンで${betAmt}BB（ポットの${bet.label}）のベット。コール/レイズ/フォールドのどれが正解？`;
+        const betMult = [0.33, 0.50, 0.75][Math.floor(Math.random() * 3)];
+        const betAmt = (this.pot * betMult).toFixed(1);
+        actionToHero = `BU(相手)がターンで${betAmt}BB（ポットの${(betMult*100).toFixed(0)}%）のベット。対応は？`;
         options = ['Fold', 'Call', 'Raise', 'All-in'];
-        const res2 = evaluatePostflopGTO(this.heroCards, this.board, true, false, { facing: 'bet' });
-        optimalAction = res2 === 'Raise' ? 'Raise' : res2;
+        optimalAction = evaluatePostflopGTO(this.heroCards, this.board, true, false, { facing: 'bet', amount: betMult }, this.isMultiway);
 
       } else if (this.drillName === 'river_decision' && this.street === 'River') {
-        const villainDecide = evaluatePostflopGTO(this.villainCards, this.board, heroIsOOP, !heroIsOOP, { facing: 'check' });
-        if (villainDecide !== 'Check' || heroIsOOP) {
-          // Villain bets
-          const betPct = ['33%', '50%', '75%'][Math.floor(Math.random() * 3)];
-          const mult = betPct === '33%' ? 0.33 : betPct === '50%' ? 0.5 : 0.75;
+        const vGTO = evaluatePostflopGTO(this.villainCards, this.board, heroIsOOP, !heroIsOOP, { facing: 'check' }, this.isMultiway);
+        if (vGTO !== 'Check' || heroIsOOP) {
+          const mult = [0.33, 0.75, 1.5][Math.floor(Math.random() * 3)];
           const betAmt = (this.pot * mult).toFixed(1);
-          actionToHero = `${this.villainPosition}(相手)がリバーで${betAmt}BB（${betPct}ポット）のベット。コール？フォールド？レイズ？`;
+          const betLabel = mult > 1 ? 'オーバーベット' : `${(mult*100).toFixed(0)}%ポット`;
+          actionToHero = `${this.villainPosition}(相手)がリバーで${betAmt}BB（${betLabel}）のベット。`;
           options = ['Fold', 'Call', 'Raise (All-in)'];
-          const r3 = evaluatePostflopGTO(this.heroCards, this.board, !heroIsOOP, heroIsOOP, { facing: 'bet' });
-          optimalAction = r3 === 'Raise' ? 'Raise (All-in)' : r3;
+          optimalAction = evaluatePostflopGTO(this.heroCards, this.board, !heroIsOOP, heroIsOOP, { facing: 'bet', amount: mult }, this.isMultiway);
         } else {
-          // Hero acts first (checked to)
           actionToHero = `${this.villainPosition}(OOP)がチェック。IP(あなた)のリバーアクションは？`;
           options = ['Check', 'Bet 33% Pot', 'Bet 75% Pot', 'All-in'];
-          optimalAction = evaluatePostflopGTO(this.heroCards, this.board, heroIsOOP, !heroIsOOP, { facing: 'check' });
+          optimalAction = evaluatePostflopGTO(this.heroCards, this.board, heroIsOOP, !heroIsOOP, { facing: 'check' }, this.isMultiway);
         }
 
       } else if (this.drillName === 'turn_bet_sizing' && this.street === 'Turn') {
         actionToHero = `BB(相手)がターンでチェック。IP(あなた)のベットサイズを選んでください。`;
         options = ['Check', 'Bet 33% Pot', 'Bet 50% Pot', 'Bet 75% Pot', 'All-in'];
-        optimalAction = evaluatePostflopGTO(this.heroCards, this.board, false, true, { facing: 'check' });
-
-      } else if (this.drillName === 'river_value' && this.street === 'River') {
-        actionToHero = `BB(相手)がリバーでチェック。バリューベットするべき？サイズは？`;
-        options = ['Check', 'Bet 33% Pot', 'Bet 75% Pot', 'All-in'];
-        optimalAction = evaluatePostflopGTO(this.heroCards, this.board, false, true, { facing: 'check' });
+        optimalAction = evaluatePostflopGTO(this.heroCards, this.board, false, true, { facing: 'check' }, this.isMultiway);
 
       } else {
-        // Normal postflop — villain acts based on their hand
-        const villainGTO = evaluatePostflopGTO(
-          this.villainCards, this.board, !heroIsOOP, !heroIsPFR, { facing: 'check' }
-        );
+        // Normal play
+        const villainGTO = evaluatePostflopGTO(this.villainCards, this.board, !heroIsOOP, !heroIsPFR, { facing: 'check' }, this.isMultiway);
 
         if (heroIsOOP) {
-          if (villainGTO === 'Check' || Math.random() < 0.5) {
-            actionToHero = `OOP(あなた)からアクションの番です。${multiwayTag}`;
+          if (villainGTO === 'Check' || Math.random() < 0.3) {
+            actionToHero = `OOP(あなた)のアクションです。${multiwayTag}`;
             options = ['Check', 'Bet 33% Pot', 'Bet 75% Pot', 'All-in'];
-            optimalAction = evaluatePostflopGTO(this.heroCards, this.board, true, heroIsPFR, { facing: 'check' });
+            optimalAction = evaluatePostflopGTO(this.heroCards, this.board, true, heroIsPFR, { facing: 'check' }, this.isMultiway);
           } else {
-            const advanced = this.difficulty === 'advanced';
-            const bigBet = advanced && (this.street === 'River' || this.pot >= this.heroStack / 2) && villainGTO === 'Bet 75% Pot';
-            if (bigBet) {
-              actionToHero = `${this.villainPosition}(相手)がオールインしてきました！${multiwayTag}`;
-              options = ['Fold', 'Call'];
-              optimalAction = (() => { const r = evaluatePostflopGTO(this.heroCards, this.board, true, heroIsPFR, { facing: 'allin' }); return r === 'Raise' ? 'Call' : r; })();
-            } else {
-              const betStr = villainGTO.replace('Bet ', '');
-              actionToHero = `${this.villainPosition}(相手)が${betStr}のベット。${multiwayTag}`;
-              options = ['Fold', 'Call', 'Raise', 'All-in'];
-              optimalAction = evaluatePostflopGTO(this.heroCards, this.board, true, heroIsPFR, { facing: 'bet' });
-            }
+            const amount = villainGTO.includes('33%') ? 0.33 : (villainGTO.includes('75%') ? 0.75 : 1.0);
+            actionToHero = `${this.villainPosition}が${villainGTO}。${multiwayTag}`;
+            options = ['Fold', 'Call', 'Raise', 'All-in'];
+            optimalAction = evaluatePostflopGTO(this.heroCards, this.board, true, heroIsPFR, { facing: 'bet', amount }, this.isMultiway);
           }
         } else {
-          // IP hero
           if (villainGTO === 'Check') {
-            actionToHero = `${this.villainPosition}(OOP)がチェック。IPのあなたの番です。${multiwayTag}`;
+            actionToHero = `${this.villainPosition}がチェック。IPのあなたの番です。${multiwayTag}`;
             options = ['Check', 'Bet 33% Pot', 'Bet 75% Pot', 'All-in'];
-            optimalAction = evaluatePostflopGTO(this.heroCards, this.board, false, heroIsPFR, { facing: 'check' });
+            optimalAction = evaluatePostflopGTO(this.heroCards, this.board, false, heroIsPFR, { facing: 'check' }, this.isMultiway);
           } else {
-            const advanced = this.difficulty === 'advanced';
-            const bigBet = advanced && (this.street === 'River' || this.pot >= this.heroStack / 2) && villainGTO === 'Bet 75% Pot';
-            if (bigBet) {
-              actionToHero = `${this.villainPosition}(相手)がオールインしてきました！${multiwayTag}`;
-              options = ['Fold', 'Call'];
-              optimalAction = (() => { const r = evaluatePostflopGTO(this.heroCards, this.board, false, heroIsPFR, { facing: 'allin' }); return r === 'Raise' ? 'Call' : r; })();
-            } else {
-              const betStr = villainGTO.replace('Bet ', '');
-              actionToHero = `${this.villainPosition}(OOP)が${betStr}のドンクベット。${multiwayTag}`;
-              options = ['Fold', 'Call', 'Raise (All-in)'];
-              optimalAction = evaluatePostflopGTO(this.heroCards, this.board, false, heroIsPFR, { facing: 'bet' });
-            }
+            const amount = villainGTO.includes('33%') ? 0.33 : (villainGTO.includes('75%') ? 0.75 : 1.0);
+            actionToHero = `${this.villainPosition}が${villainGTO}。${multiwayTag}`;
+            options = ['Fold', 'Call', 'Raise (All-in)'];
+            optimalAction = evaluatePostflopGTO(this.heroCards, this.board, false, heroIsPFR, { facing: 'bet', amount }, this.isMultiway);
           }
         }
       }
@@ -610,40 +576,41 @@ export class PokerEngine {
 
   generateEvLoss(options, optimalAction) {
     const ev = {};
-    const ctx = this.evaluateHandContext();
+    const sit = this.getSituation();
+
     options.forEach(opt => {
-      if (opt === optimalAction) { ev[opt] = 0.00; return; }
-      let loss = 0;
+      if (opt === optimalAction) {
+        ev[opt] = 0.00;
+        return;
+      }
+
+      // ── Sync with GTO Engine ──
+      // Calculate how far the chosen action is from the optimal one
+      let loss = -0.1; // Default minor loss
+
       if (this.street === 'Preflop') {
-        const strength = ctx.preflopScore;
-        if (opt === 'Fold') loss = strength > 26 ? -1.5 : 0.00;
-        else if (opt === 'Call' || opt === 'Call (リンプ)') loss = optimalAction === 'Fold' ? -0.5 : -0.1;
-        else if (opt.includes('Raise')) loss = strength < 20 ? -1.0 : 0.00;
-        else if (opt === 'Check') loss = optimalAction.includes('Raise') ? -0.5 : 0.00;
-        else loss = -0.2;
+        const rec = this.getPreflopOptimalAction(this.heroPosition, this.preflopState.facing);
+        if (opt === 'Fold' && (rec.includes('Raise') || rec === 'Call')) loss = -1.5;
+        if (opt.includes('Raise') && rec === 'Fold') loss = -1.0;
+        if (opt === 'Call' && rec === 'Fold') loss = -0.5;
       } else {
-        const hasValue = ctx.isMonster || ctx.hasTopPair || ctx.hasOverPair;
-        const hasDraw = ctx.isFlushDraw || ctx.isStraightDraw;
-        if (opt === 'Fold') {
-          if (hasValue) loss = -(this.pot * 0.8);
-          else if (hasDraw) loss = -(this.pot * 0.3);
-          else loss = 0.00;
-        } else if (opt === 'Call') {
-          if (optimalAction.includes('Raise')) loss = -0.2;
-          else if (optimalAction === 'Fold' || optimalAction === 'Check') loss = -(this.pot * 0.4);
-          else loss = 0.00;
-        } else if (opt.includes('Raise') || opt.includes('Bet') || opt.includes('All-in')) {
-          if (optimalAction === 'Fold') loss = -(this.pot * 1.5);
-          else if (optimalAction === 'Check' || optimalAction === 'Call') loss = (hasValue || hasDraw) ? 0.00 : -(this.pot * 0.5);
-          else loss = -0.1;
-        } else if (opt === 'Check') {
-          if (optimalAction.includes('Bet')) loss = hasValue ? -0.5 : 0.00;
-          else loss = 0.00;
+        // Postflop synced penalty
+        if (opt === 'Fold' && (optimalAction === 'Call' || optimalAction.includes('Raise'))) loss = -1.0;
+        if (opt === 'Call' && optimalAction === 'Fold') loss = -0.6;
+        if (opt.includes('Bet') && optimalAction === 'Check') loss = -0.4;
+        if (opt.includes('Bet') && optimalAction === 'Fold') loss = -2.0;
+
+        // Size mismatch penalty
+        if (opt.includes('Bet') && optimalAction.includes('Bet')) {
+           const optSize = parseInt(optimalAction.match(/\d+/)?.[0] || 0);
+           const chooseSize = parseInt(opt.match(/\d+/)?.[0] || 0);
+           if (Math.abs(optSize - chooseSize) > 40) loss = -0.15;
+           else loss = -0.05;
         }
       }
-      ev[opt] = parseFloat(Math.min(0, loss).toFixed(2));
+
+      ev[opt] = parseFloat(loss.toFixed(2));
     });
-    if (optimalAction === 'Fold') ev['Fold'] = 0.00;
     return ev;
   }
 
@@ -667,6 +634,7 @@ export class PokerEngine {
       if (action.includes('33%')) { heroAdded = this.pot * 0.33; this.pot += this.pot * 0.66; }
       else if (action.includes('50%')) { heroAdded = this.pot * 0.50; this.pot += this.pot * 1.0; }
       else if (action.includes('75%')) { heroAdded = this.pot * 0.75; this.pot += this.pot * 1.5; }
+      else if (action.includes('150%')) { heroAdded = this.pot * 1.5; this.pot += this.pot * 3.0; }
       else if (action.includes('2.5BB')) { heroAdded = 2.5; this.pot += 3; }
       else if (action.includes('3BB') || action.includes('3.5BB') || action.includes('4BB')) {
         heroAdded = parseFloat(action.match(/[\d.]+BB/)?.[0]) || 3;
